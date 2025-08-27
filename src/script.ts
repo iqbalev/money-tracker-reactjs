@@ -82,17 +82,29 @@ class Transaction {
 class UserInterface {
   moneyTracker: MoneyTracker;
   balanceSpan: HTMLSpanElement;
+  incomeModal: HTMLDialogElement;
+  expenseModal: HTMLDialogElement;
   incomeForm: HTMLFormElement;
   expenseForm: HTMLFormElement;
   incomeInput: HTMLInputElement;
   expenseInput: HTMLInputElement;
   incomeNoteInput: HTMLInputElement;
   expenseNoteInput: HTMLInputElement;
+  incomeButton: HTMLButtonElement;
+  expenseButton: HTMLButtonElement;
+  incomeCancelButton: HTMLButtonElement;
+  expenseCancelButton: HTMLButtonElement;
   historyUL: HTMLUListElement;
 
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
     this.balanceSpan = document.getElementById("balance") as HTMLSpanElement;
+    this.incomeModal = document.getElementById(
+      "income-modal"
+    ) as HTMLDialogElement;
+    this.expenseModal = document.getElementById(
+      "expense-modal"
+    ) as HTMLDialogElement;
     this.incomeForm = document.getElementById("income-form") as HTMLFormElement;
     this.expenseForm = document.getElementById(
       "expense-form"
@@ -105,42 +117,80 @@ class UserInterface {
     this.expenseNoteInput = document.getElementById(
       "expense-note"
     ) as HTMLInputElement;
+    this.incomeButton = document.getElementById(
+      "income-btn"
+    ) as HTMLButtonElement;
+    this.expenseButton = document.getElementById(
+      "expense-btn"
+    ) as HTMLButtonElement;
+    this.incomeCancelButton = document.getElementById(
+      "income-cancel-btn"
+    ) as HTMLButtonElement;
+    this.expenseCancelButton = document.getElementById(
+      "expense-cancel-btn"
+    ) as HTMLButtonElement;
     this.historyUL = document.getElementById("history") as HTMLUListElement;
-    this.handleIncomeForm();
-    this.handleExpenseForm();
+
+    this.handleModalOpen(this.incomeButton, this.incomeModal);
+    this.handleModalOpen(this.expenseButton, this.expenseModal);
+    this.handleModalCancel(
+      this.incomeCancelButton,
+      this.incomeForm,
+      this.incomeModal
+    );
+    this.handleModalCancel(
+      this.expenseCancelButton,
+      this.expenseForm,
+      this.expenseModal
+    );
+    this.handleFormSubmit(this.incomeForm, this.incomeModal);
+    this.handleFormSubmit(this.expenseForm, this.expenseModal);
   }
 
-  handleIncomeForm() {
-    this.incomeForm.addEventListener("submit", (e) => {
+  handleFormSubmit(form: HTMLFormElement, modal: HTMLDialogElement) {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const incomeAmount = parseInt(this.incomeInput.value);
-      const incomeNote = this.incomeNoteInput.value;
+      if (form.id === "income-form") {
+        const incomeAmount = parseInt(this.incomeInput.value);
+        const incomeNote = this.incomeNoteInput.value;
 
-      if (!incomeAmount || !incomeNote) return;
+        if (!incomeAmount || !incomeNote) return;
 
-      this.moneyTracker.createTransaction(
-        new Transaction("income", incomeAmount, incomeNote)
-      );
+        this.moneyTracker.createTransaction(
+          new Transaction("income", incomeAmount, incomeNote)
+        );
+      } else {
+        const expenseAmount = parseInt(this.expenseInput.value);
+        const expenseNote = this.expenseNoteInput.value;
+
+        if (!expenseAmount || !expenseNote) return;
+
+        this.moneyTracker.createTransaction(
+          new Transaction("expense", expenseAmount, expenseNote)
+        );
+      }
+
       this.renderUI();
-      this.incomeForm.reset();
+      form.reset();
+      modal.close();
     });
   }
 
-  handleExpenseForm() {
-    this.expenseForm.addEventListener("submit", (e) => {
-      e.preventDefault();
+  handleModalOpen(button: HTMLButtonElement, modal: HTMLDialogElement) {
+    button.addEventListener("click", () => {
+      modal.showModal();
+    });
+  }
 
-      const expenseAmount = parseInt(this.expenseInput.value);
-      const expenseNote = this.expenseNoteInput.value;
-
-      if (!expenseAmount || !expenseNote) return;
-
-      this.moneyTracker.createTransaction(
-        new Transaction("expense", expenseAmount, expenseNote)
-      );
-      this.renderUI();
-      this.expenseForm.reset();
+  handleModalCancel(
+    button: HTMLButtonElement,
+    form: HTMLFormElement,
+    modal: HTMLDialogElement
+  ) {
+    button.addEventListener("click", () => {
+      form.reset();
+      modal.close();
     });
   }
 

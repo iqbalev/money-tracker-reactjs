@@ -11,49 +11,57 @@
       <h2>Balance: <span id="balance"></span></h2>
 
       <section>
-        <form id="income-form">
-          <label for="income">Income</label>
-          <input
-            type="number"
-            name="income"
-            id="income"
-            min="1"
-            placeholder="e.g. 3000000"
-            required
-          />
+        <button id="income-btn" type="button">Income</button>
+        <dialog id="income-modal">
+          <form id="income-form">
+            <label for="income">Income</label>
+            <input
+              type="number"
+              name="income"
+              id="income"
+              min="1"
+              placeholder="e.g. 3000000"
+              required
+            />
 
-          <label for="income-note">Note</label>
-          <input
-            type="text"
-            name="income-note"
-            id="income-note"
-            placeholder="e.g. Salary"
-            required
-          />
-          <button type="submit">Confirm</button>
-        </form>
+            <label for="income-note">Note</label>
+            <input
+              type="text"
+              name="income-note"
+              id="income-note"
+              placeholder="e.g. Salary"
+              required
+            />
+            <button type="submit">Confirm</button>
+            <button id="income-cancel-btn" type="button">Cancel</button>
+          </form>
+        </dialog>
 
-        <form id="expense-form">
-          <label for="expense">Expense</label>
-          <input
-            type="number"
-            name="expense"
-            id="expense"
-            min="1"
-            placeholder="e.g. 50000"
-            required
-          />
+        <button id="expense-btn" type="button">Expense</button>
+        <dialog id="expense-modal">
+          <form id="expense-form">
+            <label for="expense">Expense</label>
+            <input
+              type="number"
+              name="expense"
+              id="expense"
+              min="1"
+              placeholder="e.g. 50000"
+              required
+            />
 
-          <label for="expense-note">Note</label>
-          <input
-            type="text"
-            name="expense-note"
-            id="expense-note"
-            placeholder="e.g. Nasi Padang"
-            required
-          />
-          <button type="submit">Confirm</button>
-        </form>
+            <label for="expense-note">Note</label>
+            <input
+              type="text"
+              name="expense-note"
+              id="expense-note"
+              placeholder="e.g. Nasi Padang"
+              required
+            />
+            <button type="submit">Confirm</button>
+            <button id="expense-cancel-btn" type="button">Cancel</button>
+          </form>
+        </dialog>
       </section>
 
       <section>
