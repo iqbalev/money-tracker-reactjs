@@ -1,17 +1,9 @@
-class Formatter {
+class Utils {
   static getCurrency(amount: number) {
     return amount.toLocaleString("id-ID", {
       style: "currency",
       currency: "IDR",
     });
-  }
-
-  static getSymbol(type: string) {
-    if (type === "income") {
-      return "+";
-    } else {
-      return "-";
-    }
   }
 
   static getDate(date: Date) {
@@ -35,47 +27,74 @@ class MoneyTracker {
     this.history = [];
   }
 
-  getBalance() {
-    return Formatter.getCurrency(this.balance);
-  }
-
-  createTransaction(transaction: Transaction) {
-    if (transaction.type === "income") {
-      this.balance = this.balance + transaction.amount;
-    } else {
-      this.balance = this.balance - transaction.amount;
-    }
-
-    transaction.updatedBalance = this.balance;
-    this.history.push(transaction);
+  getBalance(): string {
+    return Utils.getCurrency(this.balance);
   }
 
   getHistory() {
     return this.history.map((t) => ({
+      id: t.id,
+      type: t.getType(),
+      amount: Utils.getCurrency(t.amount),
+      balance: Utils.getCurrency(t.updatedBalance),
       note: t.note,
-      symbol: Formatter.getSymbol(t.type),
-      amount: Formatter.getCurrency(t.amount),
-      balance: Formatter.getCurrency(t.updatedBalance),
-      date: Formatter.getDate(t.date),
+      date: Utils.getDate(t.date),
+      symbol: t.getSymbol(),
     }));
+  }
+
+  createTransaction(transaction: Transaction): void {
+    this.balance = transaction.process(this.balance);
+    transaction.updatedBalance = this.balance;
+    this.history.push(transaction);
   }
 }
 
-class Transaction {
+abstract class Transaction {
   id: string;
-  type: "income" | "expense";
   updatedBalance: number;
   amount: number;
   note: string;
   date: Date;
 
-  constructor(type: "income" | "expense", amount: number, note: string) {
+  abstract getType(): string;
+  abstract getSymbol(): string;
+  abstract process(balance: number): number;
+
+  constructor(amount: number, note: string) {
     this.id = crypto.randomUUID();
-    this.type = type;
     this.updatedBalance = 0;
     this.amount = amount;
     this.note = note;
     this.date = new Date();
+  }
+}
+
+class Income extends Transaction {
+  getType(): string {
+    return "income";
+  }
+
+  getSymbol(): string {
+    return "+";
+  }
+
+  process(balance: number): number {
+    return balance + this.amount;
+  }
+}
+
+class Expense extends Transaction {
+  getType(): string {
+    return "expense";
+  }
+
+  getSymbol(): string {
+    return "-";
+  }
+
+  process(balance: number): number {
+    return balance - this.amount;
   }
 }
 
@@ -147,7 +166,7 @@ class UserInterface {
     this.handleFormSubmit(this.expenseForm, this.expenseModal);
   }
 
-  handleFormSubmit(form: HTMLFormElement, modal: HTMLDialogElement) {
+  handleFormSubmit(form: HTMLFormElement, modal: HTMLDialogElement): void {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
@@ -156,28 +175,28 @@ class UserInterface {
         const incomeNote = this.incomeNoteInput.value;
 
         if (!incomeAmount || !incomeNote) return;
-
         this.moneyTracker.createTransaction(
-          new Transaction("income", incomeAmount, incomeNote)
+          new Income(incomeAmount, incomeNote)
         );
       } else {
         const expenseAmount = parseInt(this.expenseInput.value);
         const expenseNote = this.expenseNoteInput.value;
 
         if (!expenseAmount || !expenseNote) return;
-
         this.moneyTracker.createTransaction(
-          new Transaction("expense", expenseAmount, expenseNote)
+          new Expense(expenseAmount, expenseNote)
         );
       }
 
       this.renderUI();
       form.reset();
       modal.close();
+
+      console.table(this.moneyTracker.getHistory());
     });
   }
 
-  handleModalOpen(button: HTMLButtonElement, modal: HTMLDialogElement) {
+  handleModalOpen(button: HTMLButtonElement, modal: HTMLDialogElement): void {
     button.addEventListener("click", () => {
       modal.showModal();
     });
@@ -187,14 +206,14 @@ class UserInterface {
     button: HTMLButtonElement,
     form: HTMLFormElement,
     modal: HTMLDialogElement
-  ) {
+  ): void {
     button.addEventListener("click", () => {
       form.reset();
       modal.close();
     });
   }
 
-  renderUI() {
+  renderUI(): void {
     this.balanceSpan.textContent = this.moneyTracker.getBalance();
     this.historyUL.innerHTML = "";
     this.moneyTracker.getHistory().forEach((li) => {
