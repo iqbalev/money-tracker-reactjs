@@ -31,52 +31,58 @@ class MoneyTracker {
     return Utils.getCurrency(this.balance);
   }
 
-  getHistory() {
+  getHistory(): {
+    id: string;
+    type: string;
+    amount: string;
+    balanceAfter: string;
+    note: string;
+    date: string;
+    symbol: string;
+  }[] {
     return this.history.map((t) => ({
       id: t.id,
-      type: t.getType(),
+      type: t.type,
       amount: Utils.getCurrency(t.amount),
-      balance: Utils.getCurrency(t.updatedBalance),
+      balanceAfter: Utils.getCurrency(t.balanceAfter),
       note: t.note,
       date: Utils.getDate(t.date),
-      symbol: t.getSymbol(),
+      symbol: t.symbol,
     }));
   }
 
   createTransaction(transaction: Transaction): void {
     this.balance = transaction.process(this.balance);
-    transaction.updatedBalance = this.balance;
+    transaction.balanceAfter = this.balance;
     this.history.push(transaction);
   }
 }
 
 abstract class Transaction {
   id: string;
-  updatedBalance: number;
+  type: string;
   amount: number;
+  balanceAfter: number;
   note: string;
   date: Date;
+  symbol: string;
 
-  abstract getType(): string;
-  abstract getSymbol(): string;
   abstract process(balance: number): number;
 
-  constructor(amount: number, note: string) {
+  constructor(amount: number, note: string, type: string, symbol: string) {
     this.id = crypto.randomUUID();
-    this.updatedBalance = 0;
+    this.type = type;
     this.amount = amount;
+    this.balanceAfter = 0;
     this.note = note;
     this.date = new Date();
+    this.symbol = symbol;
   }
 }
 
 class Income extends Transaction {
-  getType(): string {
-    return "income";
-  }
-
-  getSymbol(): string {
-    return "+";
+  constructor(amount: number, note: string) {
+    super(amount, note, "income", "+");
   }
 
   process(balance: number): number {
@@ -85,12 +91,8 @@ class Income extends Transaction {
 }
 
 class Expense extends Transaction {
-  getType(): string {
-    return "expense";
-  }
-
-  getSymbol(): string {
-    return "-";
+  constructor(amount: number, note: string) {
+    super(amount, note, "expense", "-");
   }
 
   process(balance: number): number {
@@ -218,7 +220,7 @@ class UserInterface {
     this.historyUL.innerHTML = "";
     this.moneyTracker.getHistory().forEach((li) => {
       const historyLI = document.createElement("li");
-      historyLI.textContent = `${li.note} | (${li.symbol} ${li.amount}) ${li.balance} | ${li.date}`;
+      historyLI.textContent = `${li.note} | (${li.symbol} ${li.amount}) ${li.balanceAfter} | ${li.date}`;
       this.historyUL.appendChild(historyLI);
     });
   }
