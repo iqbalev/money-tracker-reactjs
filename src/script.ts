@@ -20,15 +20,27 @@ class Utils {
 
 class MoneyTracker {
   balance: number;
+  totalIncome: number;
+  totalExpense: number;
   history: Transaction[];
 
-  constructor(balance: number = 0) {
-    this.balance = balance;
+  constructor() {
+    this.balance = 0;
+    this.totalIncome = 0;
+    this.totalExpense = 0;
     this.history = [];
   }
 
   getBalance(): string {
     return Utils.getCurrency(this.balance);
+  }
+
+  getTotalIncome(): string {
+    return Utils.getCurrency(this.totalIncome);
+  }
+
+  getTotalExpense(): string {
+    return Utils.getCurrency(this.totalExpense);
   }
 
   getHistory(): {
@@ -54,6 +66,11 @@ class MoneyTracker {
   createTransaction(transaction: Transaction): void {
     this.balance = transaction.process(this.balance);
     transaction.balanceAfter = this.balance;
+    if (transaction.type === "income") {
+      this.totalIncome += transaction.amount;
+    } else {
+      this.totalExpense += transaction.amount;
+    }
     this.history.push(transaction);
   }
 }
@@ -103,6 +120,8 @@ class Expense extends Transaction {
 class UserInterface {
   moneyTracker: MoneyTracker;
   balanceSpan: HTMLSpanElement;
+  totalIncomeSpan: HTMLSpanElement;
+  totalExpenseSpan: HTMLSpanElement;
   incomeModal: HTMLDialogElement;
   expenseModal: HTMLDialogElement;
   incomeForm: HTMLFormElement;
@@ -120,6 +139,12 @@ class UserInterface {
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
     this.balanceSpan = document.getElementById("balance") as HTMLSpanElement;
+    this.totalIncomeSpan = document.getElementById(
+      "total-income"
+    ) as HTMLSpanElement;
+    this.totalExpenseSpan = document.getElementById(
+      "total-expense"
+    ) as HTMLSpanElement;
     this.incomeModal = document.getElementById(
       "income-modal"
     ) as HTMLDialogElement;
@@ -217,6 +242,8 @@ class UserInterface {
 
   renderUI(): void {
     this.balanceSpan.textContent = this.moneyTracker.getBalance();
+    this.totalIncomeSpan.textContent = this.moneyTracker.getTotalIncome();
+    this.totalExpenseSpan.textContent = this.moneyTracker.getTotalExpense();
     this.historyUL.innerHTML = "";
     this.moneyTracker.getHistory().forEach((li) => {
       const historyLI = document.createElement("li");
