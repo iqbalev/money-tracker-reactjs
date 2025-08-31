@@ -87,7 +87,8 @@ abstract class Transaction {
   abstract process(balance: number): number;
 
   constructor(amount: number, note: string, type: string, symbol: string) {
-    this.id = crypto.randomUUID();
+    this.id =
+      Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     this.type = type;
     this.amount = amount;
     this.balanceAfter = 0;
