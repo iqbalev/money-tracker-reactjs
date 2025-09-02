@@ -1,12 +1,12 @@
 class Utils {
-  static getCurrency(amount: number) {
+  static getCurrency(amount: number): string {
     return amount.toLocaleString("id-ID", {
       style: "currency",
       currency: "IDR",
     });
   }
 
-  static getDate(date: Date) {
+  static getDate(date: Date): string {
     return date.toLocaleDateString("id-ID", {
       day: "numeric",
       month: "short",
@@ -31,34 +31,34 @@ class MoneyTracker {
     this.history = [];
   }
 
-  getBalance(): string {
-    return Utils.getCurrency(this.balance);
+  getBalance(): number {
+    return this.balance;
   }
 
-  getTotalIncome(): string {
-    return Utils.getCurrency(this.totalIncome);
+  getTotalIncome(): number {
+    return this.totalIncome;
   }
 
-  getTotalExpense(): string {
-    return Utils.getCurrency(this.totalExpense);
+  getTotalExpense(): number {
+    return this.totalExpense;
   }
 
   getHistory(): {
     id: string;
     type: string;
-    amount: string;
-    balanceAfter: string;
+    amount: number;
+    balanceAfter: number;
     note: string;
-    date: string;
+    date: Date;
     symbol: string;
   }[] {
     return this.history.map((t) => ({
       id: t.id,
       type: t.type,
-      amount: Utils.getCurrency(t.amount),
-      balanceAfter: Utils.getCurrency(t.balanceAfter),
+      amount: t.amount,
+      balanceAfter: t.balanceAfter,
       note: t.note,
-      date: Utils.getDate(t.date),
+      date: t.date,
       symbol: t.symbol,
     }));
   }
@@ -120,15 +120,15 @@ class Expense extends Transaction {
 
 class UserInterface {
   moneyTracker: MoneyTracker;
-  balanceSpan: HTMLSpanElement;
-  totalIncomeSpan: HTMLSpanElement;
-  totalExpenseSpan: HTMLSpanElement;
+  balanceP: HTMLSpanElement;
+  totalIncomeP: HTMLSpanElement;
+  totalExpensesP: HTMLSpanElement;
   incomeModal: HTMLDialogElement;
   expenseModal: HTMLDialogElement;
   incomeForm: HTMLFormElement;
   expenseForm: HTMLFormElement;
-  incomeInput: HTMLInputElement;
-  expenseInput: HTMLInputElement;
+  incomeAmountInput: HTMLInputElement;
+  expenseAmountInput: HTMLInputElement;
   incomeNoteInput: HTMLInputElement;
   expenseNoteInput: HTMLInputElement;
   incomeButton: HTMLButtonElement;
@@ -139,12 +139,12 @@ class UserInterface {
 
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
-    this.balanceSpan = document.getElementById("balance") as HTMLSpanElement;
-    this.totalIncomeSpan = document.getElementById(
+    this.balanceP = document.getElementById("balance") as HTMLSpanElement;
+    this.totalIncomeP = document.getElementById(
       "total-income"
     ) as HTMLSpanElement;
-    this.totalExpenseSpan = document.getElementById(
-      "total-expense"
+    this.totalExpensesP = document.getElementById(
+      "total-expenses"
     ) as HTMLSpanElement;
     this.incomeModal = document.getElementById(
       "income-modal"
@@ -156,8 +156,12 @@ class UserInterface {
     this.expenseForm = document.getElementById(
       "expense-form"
     ) as HTMLFormElement;
-    this.incomeInput = document.getElementById("income") as HTMLInputElement;
-    this.expenseInput = document.getElementById("expense") as HTMLInputElement;
+    this.incomeAmountInput = document.getElementById(
+      "income-amount"
+    ) as HTMLInputElement;
+    this.expenseAmountInput = document.getElementById(
+      "expense-amount"
+    ) as HTMLInputElement;
     this.incomeNoteInput = document.getElementById(
       "income-note"
     ) as HTMLInputElement;
@@ -199,7 +203,7 @@ class UserInterface {
       e.preventDefault();
 
       if (form.id === "income-form") {
-        const incomeAmount = parseInt(this.incomeInput.value);
+        const incomeAmount = parseInt(this.incomeAmountInput.value);
         const incomeNote = this.incomeNoteInput.value;
 
         if (!incomeAmount || !incomeNote) return;
@@ -207,7 +211,7 @@ class UserInterface {
           new Income(incomeAmount, incomeNote)
         );
       } else {
-        const expenseAmount = parseInt(this.expenseInput.value);
+        const expenseAmount = parseInt(this.expenseAmountInput.value);
         const expenseNote = this.expenseNoteInput.value;
 
         if (!expenseAmount || !expenseNote) return;
@@ -216,7 +220,7 @@ class UserInterface {
         );
       }
 
-      this.renderUI();
+      this.updateUI();
       form.reset();
       modal.close();
 
@@ -241,19 +245,43 @@ class UserInterface {
     });
   }
 
-  renderUI(): void {
-    this.balanceSpan.textContent = this.moneyTracker.getBalance();
-    this.totalIncomeSpan.textContent = this.moneyTracker.getTotalIncome();
-    this.totalExpenseSpan.textContent = this.moneyTracker.getTotalExpense();
+  updateUI(): void {
+    this.balanceP.textContent = Utils.getCurrency(
+      this.moneyTracker.getBalance()
+    );
+    this.totalIncomeP.textContent = Utils.getCurrency(
+      this.moneyTracker.getTotalIncome()
+    );
+    this.totalExpensesP.textContent = Utils.getCurrency(
+      this.moneyTracker.getTotalExpense()
+    );
     this.historyUL.innerHTML = "";
     this.moneyTracker.getHistory().forEach((li) => {
       const historyLI = document.createElement("li");
-      historyLI.textContent = `${li.note} | (${li.symbol} ${li.amount}) ${li.balanceAfter} | ${li.date}`;
+      historyLI.textContent = `${li.note} | (${li.symbol} ${Utils.getCurrency(
+        li.amount
+      )}) ${Utils.getCurrency(li.balanceAfter)} | ${Utils.getDate(li.date)}`;
       this.historyUL.appendChild(historyLI);
     });
+  }
+
+  initUI(): void {
+    this.balanceP.textContent = Utils.getCurrency(
+      this.moneyTracker.getBalance()
+    );
+    this.totalIncomeP.textContent = Utils.getCurrency(
+      this.moneyTracker.getTotalIncome()
+    );
+    this.totalExpensesP.textContent = Utils.getCurrency(
+      this.moneyTracker.getTotalExpense()
+    );
+
+    const emptyLI = document.createElement("li");
+    emptyLI.textContent = "No transactions found.";
+    this.historyUL.appendChild(emptyLI);
   }
 }
 
 const moneyTracker = new MoneyTracker();
 const userInterface = new UserInterface(moneyTracker);
-userInterface.renderUI();
+userInterface.initUI();

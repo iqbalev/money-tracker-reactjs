@@ -7,71 +7,102 @@
     <title>Money Tracker</title>
   </head>
   <body>
-    <div id="app">
-      <h2>Balance: <span id="balance"></span></h2>
-      <h2>Total Income: <span id="total-income"></span></h2>
-      <h2>Total Expense: <span id="total-expense"></span></h2>
+    <div class="app">
+      <main>
+        <section class="section summary">
+          <div class="balance">
+            <h2>Balance</h2>
+            <p id="balance"></p>
+          </div>
 
-      <section>
-        <button id="income-btn" type="button">Income</button>
-        <dialog id="income-modal">
-          <form id="income-form">
-            <label for="income">Income</label>
-            <input
-              type="number"
-              name="income"
-              id="income"
-              min="1"
-              placeholder="e.g. 3000000"
-              required
-            />
+          <div class="total-income">
+            <h3>Income (Total)</h3>
+            <p id="total-income"></p>
+          </div>
 
-            <label for="income-note">Note</label>
-            <input
-              type="text"
-              name="income-note"
-              id="income-note"
-              placeholder="e.g. Salary"
-              required
-            />
-            <button type="submit">Confirm</button>
-            <button id="income-cancel-btn" type="button">Cancel</button>
-          </form>
-        </dialog>
+          <div class="total-expenses">
+            <h3>Expenses (Total)</h3>
+            <p id="total-expenses"></p>
+          </div>
+        </section>
 
-        <button id="expense-btn" type="button">Expense</button>
-        <dialog id="expense-modal">
-          <form id="expense-form">
-            <label for="expense">Expense</label>
-            <input
-              type="number"
-              name="expense"
-              id="expense"
-              min="1"
-              placeholder="e.g. 50000"
-              required
-            />
+        <section class="section actions">
+          <button id="income-btn" type="button">Add Income</button>
+          <dialog id="income-modal">
+            <form id="income-form">
+              <div class="form-group">
+                <label for="income-amount">Amount</label>
+                <input
+                  type="number"
+                  name="income-amount"
+                  id="income-amount"
+                  min="1"
+                  placeholder="e.g. 3000000"
+                  required
+                />
+              </div>
 
-            <label for="expense-note">Note</label>
-            <input
-              type="text"
-              name="expense-note"
-              id="expense-note"
-              placeholder="e.g. Nasi Padang"
-              required
-            />
-            <button type="submit">Confirm</button>
-            <button id="expense-cancel-btn" type="button">Cancel</button>
-          </form>
-        </dialog>
-      </section>
+              <div class="form-group">
+                <label for="income-note">Note</label>
+                <input
+                  type="text"
+                  name="income-note"
+                  id="income-note"
+                  placeholder="e.g. Salary"
+                  required
+                />
+              </div>
 
-      <section>
-        <ul id="history">
-          <!-- Dynamic List -->
-        </ul>
-      </section>
+              <div class="input-buttons">
+                <button type="submit">Confirm</button>
+                <button id="income-cancel-btn" type="button">Cancel</button>
+              </div>
+            </form>
+          </dialog>
+
+          <button id="expense-btn" type="button">Add Expense</button>
+          <dialog id="expense-modal">
+            <form id="expense-form">
+              <div class="form-group">
+                <label for="expense-amount">Amount</label>
+                <input
+                  type="number"
+                  name="expense-amount"
+                  id="expense-amount"
+                  min="1"
+                  placeholder="e.g. 50000"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="expense-note">Note</label>
+                <input
+                  type="text"
+                  name="expense-note"
+                  id="expense-note"
+                  placeholder="e.g. Nasi Padang"
+                  required
+                />
+              </div>
+
+              <div class="input-buttons">
+                <button type="submit">Confirm</button>
+                <button id="expense-cancel-btn" type="button">Cancel</button>
+              </div>
+            </form>
+          </dialog>
+        </section>
+
+        <section class="section history">
+          <h2>Transactions</h2>
+          <ul id="history">
+            <!-- Dynamic List -->
+          </ul>
+        </section>
+      </main>
     </div>
+
     <script type="module" src="src/script.ts"></script>
   </body>
 </html>
