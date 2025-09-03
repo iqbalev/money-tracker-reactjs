@@ -18,6 +18,27 @@ class Utils {
   }
 }
 
+class Storage {
+  static save(name: string, data: object): void {
+    localStorage.setItem(name, JSON.stringify(data));
+    console.log("Data saved");
+  }
+
+  static load(name: string) {
+    const data = localStorage.getItem(name);
+    if (data) {
+      const parsedData = JSON.parse(data);
+      console.log(
+        `Saved data loaded. ${parsedData.history.length} transactions found!`
+      );
+      return parsedData;
+    } else {
+      console.log("No saved data found.");
+      return;
+    }
+  }
+}
+
 class MoneyTracker {
   balance: number;
   totalIncome: number;
@@ -25,10 +46,22 @@ class MoneyTracker {
   history: Transaction[];
 
   constructor() {
-    this.balance = 0;
-    this.totalIncome = 0;
-    this.totalExpense = 0;
-    this.history = [];
+    const savedData = Storage.load("money-tracker");
+    if (!savedData) {
+      this.balance = 0;
+      this.totalIncome = 0;
+      this.totalExpense = 0;
+      this.history = [];
+    } else {
+      this.balance = savedData.balance;
+      this.totalIncome = savedData.totalIncome;
+      this.totalExpense = savedData.totalExpense;
+      this.history = savedData.history.map((t: Transaction) => ({
+        ...t,
+        // Convert back as a Date because JSON stringify it. And also Utils.getDate() can properly format again.
+        date: new Date(t.date),
+      }));
+    }
   }
 
   getBalance(): number {
@@ -72,6 +105,13 @@ class MoneyTracker {
       this.totalExpense += transaction.amount;
     }
     this.history.push(transaction);
+
+    Storage.save("money-tracker", {
+      balance: this.balance,
+      totalIncome: this.totalIncome,
+      totalExpense: this.totalExpense,
+      history: this.history,
+    });
   }
 }
 
@@ -220,7 +260,7 @@ class UserInterface {
         );
       }
 
-      this.updateUI();
+      this.renderUI();
       form.reset();
       modal.close();
 
@@ -245,7 +285,7 @@ class UserInterface {
     });
   }
 
-  updateUI(): void {
+  renderUI(): void {
     this.balanceP.textContent = Utils.getCurrency(
       this.moneyTracker.getBalance()
     );
@@ -256,32 +296,24 @@ class UserInterface {
       this.moneyTracker.getTotalExpense()
     );
     this.historyUL.innerHTML = "";
-    this.moneyTracker.getHistory().forEach((li) => {
+
+    const history = this.moneyTracker.getHistory();
+    if (history.length === 0) {
       const historyLI = document.createElement("li");
-      historyLI.textContent = `${li.note} | (${li.symbol} ${Utils.getCurrency(
-        li.amount
-      )}) ${Utils.getCurrency(li.balanceAfter)} | ${Utils.getDate(li.date)}`;
+      historyLI.textContent = "No transactions found.";
       this.historyUL.appendChild(historyLI);
-    });
-  }
-
-  initUI(): void {
-    this.balanceP.textContent = Utils.getCurrency(
-      this.moneyTracker.getBalance()
-    );
-    this.totalIncomeP.textContent = Utils.getCurrency(
-      this.moneyTracker.getTotalIncome()
-    );
-    this.totalExpensesP.textContent = Utils.getCurrency(
-      this.moneyTracker.getTotalExpense()
-    );
-
-    const emptyLI = document.createElement("li");
-    emptyLI.textContent = "No transactions found.";
-    this.historyUL.appendChild(emptyLI);
+    } else {
+      history.forEach((li) => {
+        const historyLI = document.createElement("li");
+        historyLI.textContent = `${li.note} | (${li.symbol} ${Utils.getCurrency(
+          li.amount
+        )}) ${Utils.getCurrency(li.balanceAfter)} | ${Utils.getDate(li.date)}`;
+        this.historyUL.appendChild(historyLI);
+      });
+    }
   }
 }
 
 const moneyTracker = new MoneyTracker();
 const userInterface = new UserInterface(moneyTracker);
-userInterface.initUI();
+userInterface.renderUI();
