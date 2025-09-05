@@ -1,47 +1,43 @@
-class Utils {
-  static getCurrency(amount: number): string {
-    return amount.toLocaleString("id-ID", {
-      style: "currency",
-      currency: "IDR",
-    });
-  }
+function formatCurrency(amount: number): string {
+  return amount.toLocaleString("id-ID", {
+    style: "currency",
+    currency: "IDR",
+  });
+}
 
-  static getDate(date: Date): string {
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "2-digit",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: false,
-    });
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "2-digit",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  });
+}
+
+function saveToLocalStorage(name: string, data: object): void {
+  localStorage.setItem(name, JSON.stringify(data));
+  console.log("Data saved");
+}
+
+function loadFromLocalStorage(name: string) {
+  const data = localStorage.getItem(name);
+  if (data) {
+    const parsedData = JSON.parse(data);
+    console.log(
+      `Saved data loaded. ${parsedData.history.length} transactions found!`
+    );
+    return parsedData;
+  } else {
+    console.log("No saved data found.");
+    return;
   }
 }
 
-class LocalStorage {
-  static save(name: string, data: object): void {
-    localStorage.setItem(name, JSON.stringify(data));
-    console.log("Data saved");
-  }
-
-  static load(name: string) {
-    const data = localStorage.getItem(name);
-    if (data) {
-      const parsedData = JSON.parse(data);
-      console.log(
-        `Saved data loaded. ${parsedData.history.length} transactions found!`
-      );
-      return parsedData;
-    } else {
-      console.log("No saved data found.");
-      return;
-    }
-  }
-
-  static clear(name: string) {
-    localStorage.removeItem(name);
-    console.log("Saved data cleared!");
-  }
+function removeFromLocalStorage(name: string) {
+  localStorage.removeItem(name);
+  console.log("Saved data cleared!");
 }
 
 class MoneyTracker {
@@ -51,7 +47,7 @@ class MoneyTracker {
   history: Transaction[];
 
   constructor() {
-    const savedData = LocalStorage.load("money-tracker");
+    const savedData = loadFromLocalStorage("money-tracker");
     if (!savedData) {
       this.balance = 0;
       this.totalIncome = 0;
@@ -63,7 +59,7 @@ class MoneyTracker {
       this.totalExpense = savedData.totalExpense;
       this.history = savedData.history.map((t: Transaction) => ({
         ...t,
-        // Convert back as a Date because JSON stringify it. And also Utils.getDate() can properly format again.
+        // Convert back as a Date because JSON stringify it. Also formatDate() can properly format again.
         date: new Date(t.date),
       }));
     }
@@ -111,7 +107,7 @@ class MoneyTracker {
     }
     this.history.push(transaction);
 
-    LocalStorage.save("money-tracker", {
+    saveToLocalStorage("money-tracker", {
       balance: this.balance,
       totalIncome: this.totalIncome,
       totalExpense: this.totalExpense,
@@ -300,7 +296,7 @@ class UserInterface {
       const confirmation = confirm("Do you want to reset?");
       if (!confirmation) return;
 
-      LocalStorage.clear("money-tracker");
+      removeFromLocalStorage("money-tracker");
       this.moneyTracker.balance = 0;
       this.moneyTracker.totalIncome = 0;
       this.moneyTracker.totalExpense = 0;
@@ -310,13 +306,11 @@ class UserInterface {
   }
 
   renderUI(): void {
-    this.balanceP.textContent = Utils.getCurrency(
-      this.moneyTracker.getBalance()
-    );
-    this.totalIncomeP.textContent = Utils.getCurrency(
+    this.balanceP.textContent = formatCurrency(this.moneyTracker.getBalance());
+    this.totalIncomeP.textContent = formatCurrency(
       this.moneyTracker.getTotalIncome()
     );
-    this.totalExpensesP.textContent = Utils.getCurrency(
+    this.totalExpensesP.textContent = formatCurrency(
       this.moneyTracker.getTotalExpense()
     );
     this.historyUL.innerHTML = "";
@@ -329,9 +323,9 @@ class UserInterface {
     } else {
       history.forEach((li) => {
         const historyLI = document.createElement("li");
-        historyLI.textContent = `${li.note} | (${li.symbol} ${Utils.getCurrency(
+        historyLI.textContent = `${li.note} | (${li.symbol} ${formatCurrency(
           li.amount
-        )}) ${Utils.getCurrency(li.balanceAfter)} | ${Utils.getDate(li.date)}`;
+        )}) ${formatCurrency(li.balanceAfter)} | ${formatDate(li.date)}`;
         this.historyUL.appendChild(historyLI);
       });
     }
