@@ -18,7 +18,7 @@ class Utils {
   }
 }
 
-class Storage {
+class LocalStorage {
   static save(name: string, data: object): void {
     localStorage.setItem(name, JSON.stringify(data));
     console.log("Data saved");
@@ -37,6 +37,11 @@ class Storage {
       return;
     }
   }
+
+  static clear(name: string) {
+    localStorage.removeItem(name);
+    console.log("Saved data cleared!");
+  }
 }
 
 class MoneyTracker {
@@ -46,7 +51,7 @@ class MoneyTracker {
   history: Transaction[];
 
   constructor() {
-    const savedData = Storage.load("money-tracker");
+    const savedData = LocalStorage.load("money-tracker");
     if (!savedData) {
       this.balance = 0;
       this.totalIncome = 0;
@@ -106,7 +111,7 @@ class MoneyTracker {
     }
     this.history.push(transaction);
 
-    Storage.save("money-tracker", {
+    LocalStorage.save("money-tracker", {
       balance: this.balance,
       totalIncome: this.totalIncome,
       totalExpense: this.totalExpense,
@@ -171,6 +176,7 @@ class UserInterface {
   expenseAmountInput: HTMLInputElement;
   incomeNoteInput: HTMLInputElement;
   expenseNoteInput: HTMLInputElement;
+  resetButton: HTMLButtonElement;
   incomeButton: HTMLButtonElement;
   expenseButton: HTMLButtonElement;
   incomeCancelButton: HTMLButtonElement;
@@ -208,6 +214,9 @@ class UserInterface {
     this.expenseNoteInput = document.getElementById(
       "expense-note"
     ) as HTMLInputElement;
+    this.resetButton = document.getElementById(
+      "reset-btn"
+    ) as HTMLButtonElement;
     this.incomeButton = document.getElementById(
       "income-btn"
     ) as HTMLButtonElement;
@@ -222,6 +231,7 @@ class UserInterface {
     ) as HTMLButtonElement;
     this.historyUL = document.getElementById("history") as HTMLUListElement;
 
+    this.handleReset(this.resetButton);
     this.handleModalOpen(this.incomeButton, this.incomeModal);
     this.handleModalOpen(this.expenseButton, this.expenseModal);
     this.handleModalCancel(
@@ -282,6 +292,20 @@ class UserInterface {
     button.addEventListener("click", () => {
       form.reset();
       modal.close();
+    });
+  }
+
+  handleReset(button: HTMLButtonElement): void {
+    button.addEventListener("click", () => {
+      const confirmation = confirm("Do you want to reset?");
+      if (!confirmation) return;
+
+      LocalStorage.clear("money-tracker");
+      this.moneyTracker.balance = 0;
+      this.moneyTracker.totalIncome = 0;
+      this.moneyTracker.totalExpense = 0;
+      this.moneyTracker.history = [];
+      this.renderUI();
     });
   }
 
