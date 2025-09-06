@@ -16,13 +16,13 @@ function formatDate(date: Date): string {
   });
 }
 
-function saveToLocalStorage(name: string, data: object): void {
-  localStorage.setItem(name, JSON.stringify(data));
+function saveToLocalStorage(key: string, value: object): void {
+  localStorage.setItem(key, JSON.stringify(value));
   console.log("Data saved");
 }
 
-function loadFromLocalStorage(name: string) {
-  const data = localStorage.getItem(name);
+function loadFromLocalStorage(key: string) {
+  const data = localStorage.getItem(key);
   if (data) {
     const parsedData = JSON.parse(data);
     console.log(
@@ -35,16 +35,16 @@ function loadFromLocalStorage(name: string) {
   }
 }
 
-function removeFromLocalStorage(name: string) {
-  localStorage.removeItem(name);
+function removeFromLocalStorage(key: string) {
+  localStorage.removeItem(key);
   console.log("Saved data cleared!");
 }
 
 class MoneyTracker {
-  balance: number;
-  totalIncome: number;
-  totalExpense: number;
-  history: Transaction[];
+  private balance: number;
+  private totalIncome: number;
+  private totalExpense: number;
+  private history: Transaction[];
 
   constructor() {
     const savedData = loadFromLocalStorage("money-tracker");
@@ -77,34 +77,30 @@ class MoneyTracker {
     return this.totalExpense;
   }
 
-  getHistory(): {
-    id: string;
-    type: string;
-    amount: number;
-    balanceAfter: number;
-    note: string;
-    date: Date;
-    symbol: string;
-  }[] {
+  getHistory(): Transaction[] {
     return this.history.map((t) => ({
       id: t.id,
       type: t.type,
       amount: t.amount,
+      balanceBefore: t.balanceBefore,
       balanceAfter: t.balanceAfter,
       note: t.note,
       date: t.date,
-      symbol: t.symbol,
     }));
   }
 
   createTransaction(transaction: Transaction): void {
-    this.balance = transaction.process(this.balance);
-    transaction.balanceAfter = this.balance;
+    transaction.balanceBefore = this.balance;
+
     if (transaction.type === "income") {
+      this.balance += transaction.amount;
       this.totalIncome += transaction.amount;
     } else {
+      this.balance -= transaction.amount;
       this.totalExpense += transaction.amount;
     }
+
+    transaction.balanceAfter = this.balance;
     this.history.push(transaction);
 
     saveToLocalStorage("money-tracker", {
@@ -114,48 +110,35 @@ class MoneyTracker {
       history: this.history,
     });
   }
+
+  resetTransaction(): void {
+    this.balance = 0;
+    this.totalIncome = 0;
+    this.totalExpense = 0;
+    this.history = [];
+
+    removeFromLocalStorage("money-tracker");
+  }
 }
 
-abstract class Transaction {
-  id: string;
-  type: string;
+class Transaction {
+  readonly id: string;
+  type: "income" | "expense";
   amount: number;
+  balanceBefore: number;
   balanceAfter: number;
   note: string;
-  date: Date;
-  symbol: string;
+  readonly date: Date;
 
-  abstract process(balance: number): number;
-
-  constructor(amount: number, note: string, type: string, symbol: string) {
+  constructor(amount: number, note: string, type: "income" | "expense") {
     this.id =
       Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     this.type = type;
     this.amount = amount;
+    this.balanceBefore = 0;
     this.balanceAfter = 0;
     this.note = note;
     this.date = new Date();
-    this.symbol = symbol;
-  }
-}
-
-class Income extends Transaction {
-  constructor(amount: number, note: string) {
-    super(amount, note, "income", "+");
-  }
-
-  process(balance: number): number {
-    return balance + this.amount;
-  }
-}
-
-class Expense extends Transaction {
-  constructor(amount: number, note: string) {
-    super(amount, note, "expense", "-");
-  }
-
-  process(balance: number): number {
-    return balance - this.amount;
   }
 }
 
@@ -248,27 +231,33 @@ class UserInterface {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
 
+      let transaction: Transaction;
+
       if (form.id === "income-form") {
         const incomeAmount = parseInt(this.incomeAmountInput.value);
-        const incomeNote = this.incomeNoteInput.value;
+        const incomeNote = this.incomeNoteInput.value.trim();
 
-        if (!incomeAmount || !incomeNote) return;
-        this.moneyTracker.createTransaction(
-          new Income(incomeAmount, incomeNote)
-        );
+        if (isNaN(incomeAmount) || incomeAmount <= 0 || !incomeNote) return;
+        transaction = new Transaction(incomeAmount, incomeNote, "income");
       } else {
         const expenseAmount = parseInt(this.expenseAmountInput.value);
-        const expenseNote = this.expenseNoteInput.value;
+        const expenseNote = this.expenseNoteInput.value.trim();
 
-        if (!expenseAmount || !expenseNote) return;
-        this.moneyTracker.createTransaction(
-          new Expense(expenseAmount, expenseNote)
-        );
+        if (isNaN(expenseAmount) || expenseAmount <= 0 || !expenseNote) return;
+        if (expenseAmount > this.moneyTracker.getBalance()) {
+          const confirmation = confirm(
+            "You're short of balance. Do you still want to continue?"
+          );
+          if (!confirmation) return;
+        }
+        transaction = new Transaction(expenseAmount, expenseNote, "expense");
       }
 
-      this.renderUI();
-      form.reset();
+      this.moneyTracker.createTransaction(transaction);
+
       modal.close();
+      form.reset();
+      this.renderUI();
 
       console.table(this.moneyTracker.getHistory());
     });
@@ -297,10 +286,7 @@ class UserInterface {
       if (!confirmation) return;
 
       removeFromLocalStorage("money-tracker");
-      this.moneyTracker.balance = 0;
-      this.moneyTracker.totalIncome = 0;
-      this.moneyTracker.totalExpense = 0;
-      this.moneyTracker.history = [];
+      this.moneyTracker.resetTransaction();
       this.renderUI();
     });
   }
@@ -323,9 +309,11 @@ class UserInterface {
     } else {
       history.forEach((li) => {
         const historyLI = document.createElement("li");
-        historyLI.textContent = `${li.note} | (${li.symbol} ${formatCurrency(
-          li.amount
-        )}) ${formatCurrency(li.balanceAfter)} | ${formatDate(li.date)}`;
+        historyLI.textContent = `${li.note} | (${
+          li.type === "income" ? "+" : "-"
+        } ${formatCurrency(li.amount)}) ${formatCurrency(
+          li.balanceAfter
+        )} | ${formatDate(li.date)}`;
         this.historyUL.appendChild(historyLI);
       });
     }
