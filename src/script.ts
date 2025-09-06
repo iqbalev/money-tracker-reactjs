@@ -1,19 +1,18 @@
 function formatCurrency(amount: number): string {
-  return amount.toLocaleString("id-ID", {
+  return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-  });
+  }).format(amount);
 }
 
 function formatDate(date: Date): string {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
     year: "2-digit",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  });
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function saveToLocalStorage(key: string, value: object): void {
