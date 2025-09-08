@@ -1,3 +1,11 @@
+export type DateComponents = {
+  day: string;
+  month: string;
+  year: string;
+  hour: string;
+  minute: string;
+};
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -5,14 +13,42 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("id-ID", {
+export function formatDate(
+  date: Date,
+  locale: string = "id-ID",
+  outputStyle: "full" | "components" = "full"
+): DateComponents | string {
+  const formatter = new Intl.DateTimeFormat(locale, {
     day: "2-digit",
-    month: "2-digit",
+    month: "short",
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  });
+
+  if (outputStyle === "components") {
+    const dateComponents: DateComponents = {
+      day: "",
+      month: "",
+      year: "",
+      hour: "",
+      minute: "",
+    };
+
+    for (const obj of formatter.formatToParts(date)) {
+      if (obj.type !== "literal") {
+        dateComponents[obj.type as keyof typeof dateComponents] = obj.value;
+      }
+    }
+
+    return dateComponents;
+  }
+
+  return formatter.format(date);
+}
+
+export function capitalizeFirstWord(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export function saveToLocalStorage(key: string, value: object): void {
