@@ -4,7 +4,31 @@ import {
   removeFromLocalStorage,
   formatCurrency,
   formatDate,
+  capitalizeFirstWord,
+  type DateComponents,
 } from "./modules/helper";
+
+type ExpenseCategory =
+  | "bills"
+  | "charity"
+  | "debt"
+  | "entertainment"
+  | "food"
+  | "health"
+  | "shopping"
+  | "transport"
+  | "other";
+
+type IncomeCategory =
+  | "allowance"
+  | "business"
+  | "freelance"
+  | "gift"
+  | "investment"
+  | "pension"
+  | "royalty"
+  | "salary"
+  | "other";
 
 class MoneyTracker {
   private balance: number;
@@ -48,15 +72,16 @@ class MoneyTracker {
       id: t.id,
       type: t.type,
       amount: t.amount,
-      balanceBefore: t.balanceBefore,
-      balanceAfter: t.balanceAfter,
+      category: t.category,
+      balanceStart: t.balanceStart,
+      balanceEnd: t.balanceEnd,
       note: t.note,
       date: t.date,
     }));
   }
 
   createTransaction(transaction: Transaction): void {
-    transaction.balanceBefore = this.balance;
+    transaction.balanceStart = this.balance;
 
     if (transaction.type === "income") {
       this.balance += transaction.amount;
@@ -66,7 +91,7 @@ class MoneyTracker {
       this.totalExpense += transaction.amount;
     }
 
-    transaction.balanceAfter = this.balance;
+    transaction.balanceEnd = this.balance;
     this.history.push(transaction);
 
     saveToLocalStorage("money-tracker", {
@@ -91,19 +116,26 @@ class Transaction {
   readonly id: string;
   type: "income" | "expense";
   amount: number;
-  balanceBefore: number;
-  balanceAfter: number;
-  note: string;
+  category: IncomeCategory | ExpenseCategory;
+  balanceStart: number;
+  balanceEnd: number;
+  note?: string;
   readonly date: Date;
 
-  constructor(amount: number, note: string, type: "income" | "expense") {
+  constructor(
+    type: "income" | "expense",
+    amount: number,
+    category: IncomeCategory | ExpenseCategory,
+    note?: string
+  ) {
     this.id =
       Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     this.type = type;
     this.amount = amount;
-    this.balanceBefore = 0;
-    this.balanceAfter = 0;
-    this.note = note;
+    this.category = category;
+    this.balanceStart = 0;
+    this.balanceEnd = 0;
+    this.note = note || undefined;
     this.date = new Date();
   }
 }
@@ -119,6 +151,8 @@ class UserInterface {
   expenseForm: HTMLFormElement;
   incomeAmountInput: HTMLInputElement;
   expenseAmountInput: HTMLInputElement;
+  incomeCategoryInput: HTMLSelectElement;
+  expenseCategoryInput: HTMLSelectElement;
   incomeNoteInput: HTMLInputElement;
   expenseNoteInput: HTMLInputElement;
   resetButton: HTMLButtonElement;
@@ -153,6 +187,12 @@ class UserInterface {
     this.expenseAmountInput = document.getElementById(
       "expense-amount"
     ) as HTMLInputElement;
+    this.incomeCategoryInput = document.getElementById(
+      "income-category"
+    ) as HTMLSelectElement;
+    this.expenseCategoryInput = document.getElementById(
+      "expense-category"
+    ) as HTMLSelectElement;
     this.incomeNoteInput = document.getElementById(
       "income-note"
     ) as HTMLInputElement;
@@ -201,22 +241,35 @@ class UserInterface {
 
       if (form.id === "income-form") {
         const incomeAmount = parseInt(this.incomeAmountInput.value);
-        const incomeNote = this.incomeNoteInput.value.trim();
+        const incomeCategory = this.incomeCategoryInput.value as IncomeCategory;
+        const incomeNote = this.incomeNoteInput.value.trim() || undefined;
 
-        if (isNaN(incomeAmount) || incomeAmount <= 0 || !incomeNote) return;
-        transaction = new Transaction(incomeAmount, incomeNote, "income");
+        if (isNaN(incomeAmount) || incomeAmount <= 0) return;
+        transaction = new Transaction(
+          "income",
+          incomeAmount,
+          incomeCategory,
+          incomeNote
+        );
       } else {
         const expenseAmount = parseInt(this.expenseAmountInput.value);
-        const expenseNote = this.expenseNoteInput.value.trim();
+        const expenseCategory = this.expenseCategoryInput
+          .value as ExpenseCategory;
+        const expenseNote = this.expenseNoteInput.value.trim() || undefined;
 
-        if (isNaN(expenseAmount) || expenseAmount <= 0 || !expenseNote) return;
+        if (isNaN(expenseAmount) || expenseAmount <= 0) return;
         if (expenseAmount > this.moneyTracker.getBalance()) {
           const confirmation = confirm(
             "You're short of balance. Do you still want to continue?"
           );
           if (!confirmation) return;
         }
-        transaction = new Transaction(expenseAmount, expenseNote, "expense");
+        transaction = new Transaction(
+          "expense",
+          expenseAmount,
+          expenseCategory,
+          expenseNote
+        );
       }
 
       this.moneyTracker.createTransaction(transaction);
@@ -270,16 +323,34 @@ class UserInterface {
     const history = this.moneyTracker.getHistory();
     if (history.length === 0) {
       const historyLI = document.createElement("li");
-      historyLI.textContent = "No transactions found.";
+      historyLI.innerHTML = "No transactions found.";
       this.historyUL.appendChild(historyLI);
     } else {
       history.forEach((li) => {
-        const historyLI = document.createElement("li");
-        historyLI.textContent = `${li.note} | (${
-          li.type === "income" ? "+" : "-"
-        } ${formatCurrency(li.amount)}) ${formatCurrency(
-          li.balanceAfter
-        )} | ${formatDate(li.date)}`;
+        const dateComponents = formatDate(
+          li.date,
+          "id-ID",
+          "components"
+        ) as DateComponents;
+
+        const historyLI = document.createElement("li") as HTMLLIElement;
+        const firstDiv = document.createElement("div") as HTMLDivElement;
+        const secondDiv = document.createElement("div") as HTMLDivElement;
+        const thirdDiv = document.createElement("div") as HTMLDivElement;
+
+        firstDiv.innerHTML = `<p class="date ddmmyy">${dateComponents.day} ${dateComponents.month} ${dateComponents.year}</p><p class="date hhmm">${dateComponents.hour}.${dateComponents.minute}</p>`;
+        secondDiv.innerHTML = `<p class="category">${capitalizeFirstWord(
+          li.category
+        )}</p>${li.note ? `<p class="note">${li.note}</p>` : ""}`;
+        thirdDiv.innerHTML = `<p class="amount ${
+          li.type === "income" ? "income" : "expense"
+        }">${formatCurrency(
+          li.amount
+        )}</p><p class="balance-end">${formatCurrency(li.balanceEnd)}</p>`;
+
+        historyLI.appendChild(firstDiv);
+        historyLI.appendChild(secondDiv);
+        historyLI.appendChild(thirdDiv);
         this.historyUL.appendChild(historyLI);
       });
     }

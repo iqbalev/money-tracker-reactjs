@@ -37,19 +37,33 @@
                   name="income-amount"
                   id="income-amount"
                   min="1"
-                  placeholder="e.g. 3000000"
+                  placeholder="1000000"
                   required
                 />
               </div>
 
               <div class="form-group">
-                <label for="income-note">Note</label>
+                <label for="income-category">Category</label>
+                <select name="income-category" id="income-category">
+                  <option value="allowance">Allowance</option>
+                  <option value="business">Business</option>
+                  <option value="freelance">Freelance</option>
+                  <option value="gift">Gift</option>
+                  <option value="investment">Investment</option>
+                  <option value="pension">Pension</option>
+                  <option value="royalty">Royalty</option>
+                  <option value="salary">Salary</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="income-note">Note (Optional)</label>
                 <input
                   type="text"
                   name="income-note"
                   id="income-note"
-                  placeholder="e.g. Salary"
-                  required
+                  placeholder="Monthly job salary"
                 />
               </div>
 
@@ -70,19 +84,33 @@
                   name="expense-amount"
                   id="expense-amount"
                   min="1"
-                  placeholder="e.g. 50000"
+                  placeholder="50000"
                   required
                 />
               </div>
 
               <div class="form-group">
-                <label for="expense-note">Note</label>
+                <label for="expense-category">Category</label>
+                <select name="expense-category" id="expense-category">
+                  <option value="bills">Bills</option>
+                  <option value="charity">Charity</option>
+                  <option value="debt">Debt</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="food">Food</option>
+                  <option value="health">Health</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="transport">Transport</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="expense-note">Note (Optional)</label>
                 <input
                   type="text"
                   name="expense-note"
                   id="expense-note"
-                  placeholder="e.g. Nasi Padang"
-                  required
+                  placeholder="Diner at a restaurant"
                 />
               </div>
 
