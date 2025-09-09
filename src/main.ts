@@ -151,8 +151,8 @@ class UserInterface {
   expenseForm: HTMLFormElement;
   incomeAmountInput: HTMLInputElement;
   expenseAmountInput: HTMLInputElement;
-  incomeCategoryInput: HTMLSelectElement;
-  expenseCategoryInput: HTMLSelectElement;
+  incomeCategorySelect: HTMLSelectElement;
+  expenseCategorySelect: HTMLSelectElement;
   incomeNoteInput: HTMLInputElement;
   expenseNoteInput: HTMLInputElement;
   resetButton: HTMLButtonElement;
@@ -160,7 +160,7 @@ class UserInterface {
   expenseButton: HTMLButtonElement;
   incomeCancelButton: HTMLButtonElement;
   expenseCancelButton: HTMLButtonElement;
-  historyUL: HTMLUListElement;
+  historyUl: HTMLUListElement;
 
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
@@ -187,10 +187,10 @@ class UserInterface {
     this.expenseAmountInput = document.getElementById(
       "expense-amount"
     ) as HTMLInputElement;
-    this.incomeCategoryInput = document.getElementById(
+    this.incomeCategorySelect = document.getElementById(
       "income-category"
     ) as HTMLSelectElement;
-    this.expenseCategoryInput = document.getElementById(
+    this.expenseCategorySelect = document.getElementById(
       "expense-category"
     ) as HTMLSelectElement;
     this.incomeNoteInput = document.getElementById(
@@ -214,7 +214,7 @@ class UserInterface {
     this.expenseCancelButton = document.getElementById(
       "expense-cancel-btn"
     ) as HTMLButtonElement;
-    this.historyUL = document.getElementById("history") as HTMLUListElement;
+    this.historyUl = document.getElementById("history") as HTMLUListElement;
 
     this.handleReset(this.resetButton);
     this.handleModalOpen(this.incomeButton, this.incomeModal);
@@ -241,7 +241,8 @@ class UserInterface {
 
       if (form.id === "income-form") {
         const incomeAmount = parseInt(this.incomeAmountInput.value);
-        const incomeCategory = this.incomeCategoryInput.value as IncomeCategory;
+        const incomeCategory = this.incomeCategorySelect
+          .value as IncomeCategory;
         const incomeNote = this.incomeNoteInput.value.trim() || undefined;
 
         if (isNaN(incomeAmount) || incomeAmount <= 0) return;
@@ -253,7 +254,7 @@ class UserInterface {
         );
       } else {
         const expenseAmount = parseInt(this.expenseAmountInput.value);
-        const expenseCategory = this.expenseCategoryInput
+        const expenseCategory = this.expenseCategorySelect
           .value as ExpenseCategory;
         const expenseNote = this.expenseNoteInput.value.trim() || undefined;
 
@@ -310,7 +311,7 @@ class UserInterface {
     });
   }
 
-  renderUI(): void {
+  renderSummary(): void {
     this.balanceP.textContent = formatCurrency(this.moneyTracker.getBalance());
     this.totalIncomeP.textContent = formatCurrency(
       this.moneyTracker.getTotalIncome()
@@ -318,13 +319,16 @@ class UserInterface {
     this.totalExpensesP.textContent = formatCurrency(
       this.moneyTracker.getTotalExpense()
     );
-    this.historyUL.innerHTML = "";
+  }
 
+  renderHistory(): void {
+    this.historyUl.innerHTML = "";
     const history = this.moneyTracker.getHistory();
+
     if (history.length === 0) {
-      const historyLI = document.createElement("li");
-      historyLI.innerHTML = "No transactions found.";
-      this.historyUL.appendChild(historyLI);
+      const historyLi = document.createElement("li");
+      historyLi.textContent = "No transactions found.";
+      this.historyUl.appendChild(historyLi);
     } else {
       history.forEach((li) => {
         const dateComponents = formatDate(
@@ -333,30 +337,55 @@ class UserInterface {
           "components"
         ) as DateComponents;
 
-        const historyLI = document.createElement("li") as HTMLLIElement;
+        const historyLi = document.createElement("li") as HTMLLIElement;
         const firstDiv = document.createElement("div") as HTMLDivElement;
         const secondDiv = document.createElement("div") as HTMLDivElement;
         const thirdDiv = document.createElement("div") as HTMLDivElement;
+        const ddmmyyP = document.createElement("p") as HTMLParagraphElement;
+        const hhmmP = document.createElement("p") as HTMLParagraphElement;
+        const categoryP = document.createElement("p") as HTMLParagraphElement;
+        const noteP = document.createElement("p") as HTMLParagraphElement;
+        const amountP = document.createElement("p") as HTMLParagraphElement;
+        const balanceEndP = document.createElement("p") as HTMLParagraphElement;
 
-        firstDiv.innerHTML = `<p class="date ddmmyy">${dateComponents.day} ${dateComponents.month} ${dateComponents.year}</p><p class="date hhmm">${dateComponents.hour}.${dateComponents.minute}</p>`;
-        secondDiv.innerHTML = `<p class="category">${capitalizeFirstWord(
-          li.category
-        )}</p>${li.note ? `<p class="note">${li.note}</p>` : ""}`;
-        thirdDiv.innerHTML = `<p class="amount ${
-          li.type === "income" ? "income" : "expense"
-        }">${formatCurrency(
-          li.amount
-        )}</p><p class="balance-end">${formatCurrency(li.balanceEnd)}</p>`;
+        ddmmyyP.classList.add("date", "ddmmyy");
+        hhmmP.classList.add("date", "hhmm");
+        categoryP.classList.add("category");
+        noteP.classList.add("note");
+        if (li.type === "income") {
+          amountP.classList.add("amount", "income");
+        } else {
+          amountP.classList.add("amount", "expense");
+        }
+        balanceEndP.classList.add("balance-end");
 
-        historyLI.appendChild(firstDiv);
-        historyLI.appendChild(secondDiv);
-        historyLI.appendChild(thirdDiv);
-        this.historyUL.appendChild(historyLI);
+        ddmmyyP.textContent = `${dateComponents.day} ${dateComponents.month} ${dateComponents.year}`;
+        hhmmP.textContent = `${dateComponents.hour}.${dateComponents.minute}`;
+        categoryP.textContent = capitalizeFirstWord(li.category);
+        if (li.note) {
+          noteP.textContent = li.note;
+        }
+        amountP.textContent = formatCurrency(li.amount);
+        balanceEndP.textContent = formatCurrency(li.balanceEnd);
+
+        firstDiv.append(ddmmyyP, hhmmP);
+        secondDiv.append(categoryP);
+        if (li.note) {
+          secondDiv.append(noteP);
+        }
+        thirdDiv.append(amountP, balanceEndP);
+        historyLi.append(firstDiv, secondDiv, thirdDiv);
+        this.historyUl.appendChild(historyLi);
       });
     }
   }
+
+  renderUI(): void {
+    this.renderSummary();
+    this.renderHistory();
+  }
 }
 
-const moneyTracker = new MoneyTracker();
-const userInterface = new UserInterface(moneyTracker);
+const moneyTracker: MoneyTracker = new MoneyTracker();
+const userInterface: UserInterface = new UserInterface(moneyTracker);
 userInterface.renderUI();
