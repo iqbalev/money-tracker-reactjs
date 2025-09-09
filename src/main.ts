@@ -142,9 +142,9 @@ class Transaction {
 
 class UserInterface {
   moneyTracker: MoneyTracker;
-  balanceP: HTMLSpanElement;
-  totalIncomeP: HTMLSpanElement;
-  totalExpensesP: HTMLSpanElement;
+  balanceP: HTMLParagraphElement;
+  totalIncomeP: HTMLParagraphElement;
+  totalExpensesP: HTMLParagraphElement;
   incomeModal: HTMLDialogElement;
   expenseModal: HTMLDialogElement;
   incomeForm: HTMLFormElement;
@@ -164,13 +164,13 @@ class UserInterface {
 
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
-    this.balanceP = document.getElementById("balance") as HTMLSpanElement;
+    this.balanceP = document.getElementById("balance") as HTMLParagraphElement;
     this.totalIncomeP = document.getElementById(
       "total-income"
-    ) as HTMLSpanElement;
+    ) as HTMLParagraphElement;
     this.totalExpensesP = document.getElementById(
       "total-expenses"
-    ) as HTMLSpanElement;
+    ) as HTMLParagraphElement;
     this.incomeModal = document.getElementById(
       "income-modal"
     ) as HTMLDialogElement;
