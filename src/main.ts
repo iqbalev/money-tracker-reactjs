@@ -6,7 +6,7 @@ import {
   formatDateAndTime,
   capitalizeFirstWord,
   type DateAndTime,
-} from "./modules/helper";
+} from "./modules/helpers";
 
 type ExpenseCategory =
   | "bills"
