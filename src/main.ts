@@ -93,7 +93,10 @@ class MoneyTracker {
 
     transaction.balanceEnd = this.balance;
     this.history.push(transaction);
+    this.saveState();
+  }
 
+  saveState(): void {
     saveToLocalStorage("money-tracker", {
       balance: this.balance,
       totalIncome: this.totalIncome,
@@ -102,7 +105,7 @@ class MoneyTracker {
     });
   }
 
-  resetTransaction(): void {
+  resetState(): void {
     this.balance = 0;
     this.totalIncome = 0;
     this.totalExpense = 0;
@@ -306,7 +309,7 @@ class UserInterface {
       if (!confirmation) return;
 
       removeFromLocalStorage("money-tracker");
-      this.moneyTracker.resetTransaction();
+      this.moneyTracker.resetState();
       this.renderUI();
     });
   }
