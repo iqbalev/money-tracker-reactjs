@@ -3,9 +3,9 @@ import {
   saveToLocalStorage,
   removeFromLocalStorage,
   formatCurrency,
-  formatDate,
+  formatDateAndTime,
   capitalizeFirstWord,
-  type DateComponents,
+  type DateAndTime,
 } from "./modules/helper";
 
 type ExpenseCategory =
@@ -315,12 +315,29 @@ class UserInterface {
   }
 
   renderSummary(): void {
-    this.balanceP.textContent = formatCurrency(this.moneyTracker.getBalance());
+    const balance = this.moneyTracker.getBalance();
+    this.balanceP.classList.add("balance");
+
+    if (balance < 0) {
+      this.balanceP.classList.add("minus");
+      this.balanceP.classList.remove("plus");
+    } else if (balance > 0) {
+      this.balanceP.classList.add("plus");
+      this.balanceP.classList.remove("minus");
+    } else {
+      this.balanceP.classList.remove("plus", "minus");
+    }
+
+    this.balanceP.textContent = formatCurrency(balance, "id-ID", "IDR");
     this.totalIncomeP.textContent = formatCurrency(
-      this.moneyTracker.getTotalIncome()
+      this.moneyTracker.getTotalIncome(),
+      "id-ID",
+      "IDR"
     );
     this.totalExpensesP.textContent = formatCurrency(
-      this.moneyTracker.getTotalExpense()
+      this.moneyTracker.getTotalExpense(),
+      "id-ID",
+      "IDR"
     );
   }
 
@@ -334,25 +351,19 @@ class UserInterface {
       this.historyUl.appendChild(historyLi);
     } else {
       history.forEach((li) => {
-        const dateComponents = formatDate(
-          li.date,
-          "id-ID",
-          "components"
-        ) as DateComponents;
-
         const historyLi = document.createElement("li") as HTMLLIElement;
         const firstDiv = document.createElement("div") as HTMLDivElement;
         const secondDiv = document.createElement("div") as HTMLDivElement;
         const thirdDiv = document.createElement("div") as HTMLDivElement;
-        const ddmmyyP = document.createElement("p") as HTMLParagraphElement;
-        const hhmmP = document.createElement("p") as HTMLParagraphElement;
+        const dateP = document.createElement("p") as HTMLParagraphElement;
+        const timeP = document.createElement("p") as HTMLParagraphElement;
         const categoryP = document.createElement("p") as HTMLParagraphElement;
         const noteP = document.createElement("p") as HTMLParagraphElement;
         const amountP = document.createElement("p") as HTMLParagraphElement;
         const balanceEndP = document.createElement("p") as HTMLParagraphElement;
 
-        ddmmyyP.classList.add("date", "ddmmyy");
-        hhmmP.classList.add("date", "hhmm");
+        dateP.classList.add("date");
+        timeP.classList.add("time");
         categoryP.classList.add("category");
         noteP.classList.add("note");
         if (li.type === "income") {
@@ -362,16 +373,21 @@ class UserInterface {
         }
         balanceEndP.classList.add("balance-end");
 
-        ddmmyyP.textContent = `${dateComponents.day} ${dateComponents.month} ${dateComponents.year}`;
-        hhmmP.textContent = `${dateComponents.hour}.${dateComponents.minute}`;
+        const formattedDateAndTime = formatDateAndTime(
+          li.date,
+          "id-ID"
+        ) as DateAndTime;
+
+        dateP.textContent = `${formattedDateAndTime.date}`;
+        timeP.textContent = `${formattedDateAndTime.time}`;
         categoryP.textContent = capitalizeFirstWord(li.category);
         if (li.note) {
           noteP.textContent = li.note;
         }
-        amountP.textContent = formatCurrency(li.amount);
-        balanceEndP.textContent = formatCurrency(li.balanceEnd);
+        amountP.textContent = formatCurrency(li.amount, "id-ID", "IDR");
+        balanceEndP.textContent = formatCurrency(li.balanceEnd, "id-ID", "IDR");
 
-        firstDiv.append(ddmmyyP, hhmmP);
+        firstDiv.append(dateP, timeP);
         secondDiv.append(categoryP);
         if (li.note) {
           secondDiv.append(noteP);
