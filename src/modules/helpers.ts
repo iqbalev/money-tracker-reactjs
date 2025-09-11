@@ -1,7 +1,16 @@
+import { translations } from "./translations";
+
 export type DateAndTime = {
   date: string;
   time: string;
 };
+
+export function translate(
+  locale: "en" | "id",
+  key: keyof (typeof translations)["en"]
+) {
+  return translations[locale][key];
+}
 
 export function formatCurrency(
   amount: number,

@@ -8,30 +8,42 @@
   </head>
   <body>
     <div class="app">
+      <header>
+        <form id="language-form">
+          <div class="form-group">
+            <label for="language" data-i18n="select-language"></label>
+            <select name="language" id="language">
+              <option value="id" data-i18n="bahasa-indonesia"></option>
+              <option value="en" data-i18n="english"></option>
+            </select>
+          </div>
+        </form>
+      </header>
+
       <main>
         <section class="section summary">
           <div class="balance">
-            <h2>Balance</h2>
+            <h2 data-i18n="balance"></h2>
             <p id="balance"></p>
           </div>
 
-          <div class="total-income">
-            <h3>Income (Total)</h3>
-            <p id="total-income"></p>
+          <div class="income">
+            <h3 data-i18n="income"></h3>
+            <p id="income"></p>
           </div>
 
-          <div class="total-expenses">
-            <h3>Expenses (Total)</h3>
-            <p id="total-expenses"></p>
+          <div class="expenses">
+            <h3 data-i18n="expenses"></h3>
+            <p id="expenses"></p>
           </div>
         </section>
 
         <section class="section actions">
-          <button id="income-btn" type="button">Add Income</button>
+          <button id="income-btn" type="button" data-i18n="add-income"></button>
           <dialog id="income-modal">
             <form id="income-form">
               <div class="form-group">
-                <label for="income-amount">Amount</label>
+                <label for="income-amount" data-i18n="amount"></label>
                 <input
                   type="number"
                   name="income-amount"
@@ -43,22 +55,22 @@
               </div>
 
               <div class="form-group">
-                <label for="income-category">Category</label>
+                <label for="income-category" data-i18n="category"></label>
                 <select name="income-category" id="income-category">
-                  <option value="allowance">Allowance</option>
-                  <option value="business">Business</option>
-                  <option value="freelance">Freelance</option>
-                  <option value="gift">Gift</option>
-                  <option value="investment">Investment</option>
-                  <option value="pension">Pension</option>
-                  <option value="royalty">Royalty</option>
-                  <option value="salary">Salary</option>
-                  <option value="other">Other</option>
+                  <option value="allowance" data-i18n="allowance"></option>
+                  <option value="business" data-i18n="business"></option>
+                  <option value="freelance" data-i18n="freelance"></option>
+                  <option value="gift" data-i18n="gift"></option>
+                  <option value="investment" data-i18n="investment"></option>
+                  <option value="pension" data-i18n="pension"></option>
+                  <option value="royalty" data-i18n="royalty"></option>
+                  <option value="salary" data-i18n="salary"></option>
+                  <option value="other" data-i18n="other"></option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label for="income-note">Note (Optional)</label>
+                <label for="income-note" data-i18n="note"></label>
                 <input
                   type="text"
                   name="income-note"
@@ -68,17 +80,25 @@
               </div>
 
               <div class="input-buttons">
-                <button type="submit">Confirm</button>
-                <button id="income-cancel-btn" type="button">Cancel</button>
+                <button type="submit" data-i18n="save"></button>
+                <button
+                  id="income-cancel-btn"
+                  type="button"
+                  data-i18n="cancel"
+                ></button>
               </div>
             </form>
           </dialog>
 
-          <button id="expense-btn" type="button">Add Expense</button>
+          <button
+            id="expense-btn"
+            type="button"
+            data-i18n="add-expense"
+          ></button>
           <dialog id="expense-modal">
             <form id="expense-form">
               <div class="form-group">
-                <label for="expense-amount">Amount</label>
+                <label for="expense-amount" data-i18n="amount"></label>
                 <input
                   type="number"
                   name="expense-amount"
@@ -90,22 +110,25 @@
               </div>
 
               <div class="form-group">
-                <label for="expense-category">Category</label>
+                <label for="expense-category" data-i18n="category"></label>
                 <select name="expense-category" id="expense-category">
-                  <option value="bills">Bills</option>
-                  <option value="charity">Charity</option>
-                  <option value="debt">Debt</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="food">Food</option>
-                  <option value="health">Health</option>
-                  <option value="shopping">Shopping</option>
-                  <option value="transport">Transport</option>
-                  <option value="other">Other</option>
+                  <option value="bills" data-i18n="bills"></option>
+                  <option value="charity" data-i18n="charity"></option>
+                  <option value="debt" data-i18n="debt"></option>
+                  <option
+                    value="entertainment"
+                    data-i18n="entertainment"
+                  ></option>
+                  <option value="food" data-i18n="food"></option>
+                  <option value="health" data-i18n="health"></option>
+                  <option value="shopping" data-i18n="shopping"></option>
+                  <option value="transport" data-i18n="transport"></option>
+                  <option value="other" data-i18n="other"></option>
                 </select>
               </div>
 
               <div class="form-group">
-                <label for="expense-note">Note (Optional)</label>
+                <label for="expense-note" data-i18n="note"></label>
                 <input
                   type="text"
                   name="expense-note"
@@ -115,17 +138,21 @@
               </div>
 
               <div class="input-buttons">
-                <button type="submit">Confirm</button>
-                <button id="expense-cancel-btn" type="button">Cancel</button>
+                <button type="submit" data-i18n="save"></button>
+                <button
+                  id="expense-cancel-btn"
+                  type="button"
+                  data-i18n="cancel"
+                ></button>
               </div>
             </form>
           </dialog>
 
-          <button id="reset-btn" type="button">Reset</button>
+          <button id="reset-btn" type="button" data-i18n="reset"></button>
         </section>
 
         <section class="section history">
-          <h2>Transactions</h2>
+          <h2 data-i18n="transactions"></h2>
           <ul id="history">
             <!-- Dynamic List -->
           </ul>

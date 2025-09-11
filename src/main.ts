@@ -1,12 +1,13 @@
 import {
-  loadFromLocalStorage,
-  saveToLocalStorage,
-  removeFromLocalStorage,
   formatCurrency,
   formatDateAndTime,
-  capitalizeFirstWord,
+  loadFromLocalStorage,
+  removeFromLocalStorage,
+  saveToLocalStorage,
+  translate,
   type DateAndTime,
 } from "./modules/helpers";
+import type { translations } from "./modules/translations";
 
 type ExpenseCategory =
   | "bills"
@@ -31,22 +32,25 @@ type IncomeCategory =
   | "other";
 
 class MoneyTracker {
+  private language: "en" | "id";
   private balance: number;
-  private totalIncome: number;
-  private totalExpense: number;
+  private income: number;
+  private expenses: number;
   private history: Transaction[];
 
   constructor() {
     const savedData = loadFromLocalStorage("money-tracker");
     if (!savedData) {
+      this.language = "id";
       this.balance = 0;
-      this.totalIncome = 0;
-      this.totalExpense = 0;
+      this.income = 0;
+      this.expenses = 0;
       this.history = [];
     } else {
+      this.language = savedData.language;
       this.balance = savedData.balance;
-      this.totalIncome = savedData.totalIncome;
-      this.totalExpense = savedData.totalExpense;
+      this.income = savedData.income;
+      this.expenses = savedData.expenses;
       this.history = savedData.history.map((t: Transaction) => ({
         ...t,
         // Convert back as a Date because JSON stringify it. Also formatDate() can properly format again.
@@ -55,16 +59,20 @@ class MoneyTracker {
     }
   }
 
+  getLanguage(): "en" | "id" {
+    return this.language;
+  }
+
   getBalance(): number {
     return this.balance;
   }
 
-  getTotalIncome(): number {
-    return this.totalIncome;
+  getIncome(): number {
+    return this.income;
   }
 
-  getTotalExpense(): number {
-    return this.totalExpense;
+  getExpenses(): number {
+    return this.expenses;
   }
 
   getHistory(): Transaction[] {
@@ -80,15 +88,20 @@ class MoneyTracker {
     }));
   }
 
+  setLanguage(locale: "en" | "id") {
+    this.language = locale;
+    this.saveState();
+  }
+
   createTransaction(transaction: Transaction): void {
     transaction.balanceStart = this.balance;
 
     if (transaction.type === "income") {
       this.balance += transaction.amount;
-      this.totalIncome += transaction.amount;
+      this.income += transaction.amount;
     } else {
       this.balance -= transaction.amount;
-      this.totalExpense += transaction.amount;
+      this.expenses += transaction.amount;
     }
 
     transaction.balanceEnd = this.balance;
@@ -98,17 +111,19 @@ class MoneyTracker {
 
   saveState(): void {
     saveToLocalStorage("money-tracker", {
+      language: this.language,
       balance: this.balance,
-      totalIncome: this.totalIncome,
-      totalExpense: this.totalExpense,
+      income: this.income,
+      expenses: this.expenses,
       history: this.history,
     });
   }
 
   resetState(): void {
+    this.language = "en";
     this.balance = 0;
-    this.totalIncome = 0;
-    this.totalExpense = 0;
+    this.income = 0;
+    this.expenses = 0;
     this.history = [];
 
     removeFromLocalStorage("money-tracker");
@@ -146,14 +161,16 @@ class Transaction {
 class UserInterface {
   moneyTracker: MoneyTracker;
   balanceP: HTMLParagraphElement;
-  totalIncomeP: HTMLParagraphElement;
-  totalExpensesP: HTMLParagraphElement;
+  incomeP: HTMLParagraphElement;
+  expensesP: HTMLParagraphElement;
   incomeModal: HTMLDialogElement;
   expenseModal: HTMLDialogElement;
+  languageForm: HTMLFormElement;
   incomeForm: HTMLFormElement;
   expenseForm: HTMLFormElement;
   incomeAmountInput: HTMLInputElement;
   expenseAmountInput: HTMLInputElement;
+  languageSelect: HTMLSelectElement;
   incomeCategorySelect: HTMLSelectElement;
   expenseCategorySelect: HTMLSelectElement;
   incomeNoteInput: HTMLInputElement;
@@ -168,11 +185,9 @@ class UserInterface {
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
     this.balanceP = document.getElementById("balance") as HTMLParagraphElement;
-    this.totalIncomeP = document.getElementById(
-      "total-income"
-    ) as HTMLParagraphElement;
-    this.totalExpensesP = document.getElementById(
-      "total-expenses"
+    this.incomeP = document.getElementById("income") as HTMLParagraphElement;
+    this.expensesP = document.getElementById(
+      "expenses"
     ) as HTMLParagraphElement;
     this.incomeModal = document.getElementById(
       "income-modal"
@@ -180,6 +195,9 @@ class UserInterface {
     this.expenseModal = document.getElementById(
       "expense-modal"
     ) as HTMLDialogElement;
+    this.languageForm = document.getElementById(
+      "language-form"
+    ) as HTMLFormElement;
     this.incomeForm = document.getElementById("income-form") as HTMLFormElement;
     this.expenseForm = document.getElementById(
       "expense-form"
@@ -190,6 +208,9 @@ class UserInterface {
     this.expenseAmountInput = document.getElementById(
       "expense-amount"
     ) as HTMLInputElement;
+    this.languageSelect = document.getElementById(
+      "language"
+    ) as HTMLSelectElement;
     this.incomeCategorySelect = document.getElementById(
       "income-category"
     ) as HTMLSelectElement;
@@ -219,7 +240,7 @@ class UserInterface {
     ) as HTMLButtonElement;
     this.historyUl = document.getElementById("history") as HTMLUListElement;
 
-    this.handleReset(this.resetButton);
+    this.handleLanguageChange(this.languageSelect);
     this.handleModalOpen(this.incomeButton, this.incomeModal);
     this.handleModalOpen(this.expenseButton, this.expenseModal);
     this.handleModalCancel(
@@ -234,6 +255,33 @@ class UserInterface {
     );
     this.handleFormSubmit(this.incomeForm, this.incomeModal);
     this.handleFormSubmit(this.expenseForm, this.expenseModal);
+    this.handleReset(this.resetButton);
+  }
+
+  handleLanguageChange(select: HTMLSelectElement) {
+    select.addEventListener("change", () => {
+      const language = this.languageSelect.value as "en" | "id";
+      this.moneyTracker.setLanguage(language);
+      this.renderUI();
+      // TODO: Add form submit when backend added.
+    });
+  }
+
+  handleModalOpen(button: HTMLButtonElement, modal: HTMLDialogElement): void {
+    button.addEventListener("click", () => {
+      modal.showModal();
+    });
+  }
+
+  handleModalCancel(
+    button: HTMLButtonElement,
+    form: HTMLFormElement,
+    modal: HTMLDialogElement
+  ): void {
+    button.addEventListener("click", () => {
+      form.reset();
+      modal.close();
+    });
   }
 
   handleFormSubmit(form: HTMLFormElement, modal: HTMLDialogElement): void {
@@ -264,7 +312,7 @@ class UserInterface {
         if (isNaN(expenseAmount) || expenseAmount <= 0) return;
         if (expenseAmount > this.moneyTracker.getBalance()) {
           const confirmation = confirm(
-            "You're short of balance. Do you still want to continue?"
+            translate(this.moneyTracker.getLanguage(), "out-of-balance-confirm")
           );
           if (!confirmation) return;
         }
@@ -286,26 +334,11 @@ class UserInterface {
     });
   }
 
-  handleModalOpen(button: HTMLButtonElement, modal: HTMLDialogElement): void {
-    button.addEventListener("click", () => {
-      modal.showModal();
-    });
-  }
-
-  handleModalCancel(
-    button: HTMLButtonElement,
-    form: HTMLFormElement,
-    modal: HTMLDialogElement
-  ): void {
-    button.addEventListener("click", () => {
-      form.reset();
-      modal.close();
-    });
-  }
-
   handleReset(button: HTMLButtonElement): void {
     button.addEventListener("click", () => {
-      const confirmation = confirm("Do you want to reset?");
+      const confirmation = confirm(
+        translate(this.moneyTracker.getLanguage(), "reset-confirm")
+      );
       if (!confirmation) return;
 
       removeFromLocalStorage("money-tracker");
@@ -329,13 +362,13 @@ class UserInterface {
     }
 
     this.balanceP.textContent = formatCurrency(balance, "id-ID", "IDR");
-    this.totalIncomeP.textContent = formatCurrency(
-      this.moneyTracker.getTotalIncome(),
+    this.incomeP.textContent = formatCurrency(
+      this.moneyTracker.getIncome(),
       "id-ID",
       "IDR"
     );
-    this.totalExpensesP.textContent = formatCurrency(
-      this.moneyTracker.getTotalExpense(),
+    this.expensesP.textContent = formatCurrency(
+      this.moneyTracker.getExpenses(),
       "id-ID",
       "IDR"
     );
@@ -347,7 +380,10 @@ class UserInterface {
 
     if (history.length === 0) {
       const historyLi = document.createElement("li");
-      historyLi.textContent = "No transactions found.";
+      historyLi.textContent = translate(
+        this.moneyTracker.getLanguage(),
+        "no-transactions"
+      );
       this.historyUl.appendChild(historyLi);
     } else {
       history.forEach((li) => {
@@ -380,7 +416,10 @@ class UserInterface {
 
         dateP.textContent = `${formattedDateAndTime.date}`;
         timeP.textContent = `${formattedDateAndTime.time}`;
-        categoryP.textContent = capitalizeFirstWord(li.category);
+        categoryP.textContent = translate(
+          this.moneyTracker.getLanguage(),
+          li.category
+        );
         if (li.note) {
           noteP.textContent = li.note;
         }
@@ -399,9 +438,22 @@ class UserInterface {
     }
   }
 
+  renderTranslations(): void {
+    const language = this.moneyTracker.getLanguage();
+    const i18n = document.querySelectorAll<HTMLElement>("[data-i18n]");
+    i18n.forEach((e) => {
+      e.textContent = translate(
+        language,
+        e.dataset.i18n as keyof (typeof translations)["en"]
+      );
+    });
+    this.languageSelect.value = language;
+  }
+
   renderUI(): void {
     this.renderSummary();
     this.renderHistory();
+    this.renderTranslations();
   }
 }
 
