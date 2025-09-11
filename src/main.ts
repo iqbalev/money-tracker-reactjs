@@ -447,7 +447,16 @@ class UserInterface {
         e.dataset.i18n as keyof (typeof translations)["en"]
       );
     });
+
     this.languageSelect.value = language;
+    this.incomeNoteInput.placeholder = translate(
+      language,
+      "note-income-placeholder"
+    );
+    this.expenseNoteInput.placeholder = translate(
+      language,
+      "note-expense-placeholder"
+    );
   }
 
   renderUI(): void {
