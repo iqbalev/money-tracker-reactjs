@@ -347,6 +347,67 @@ class UserInterface {
     });
   }
 
+  renderNoTransactionList(): void {
+    const historyLi = document.createElement("li");
+    historyLi.textContent = translate(
+      this.moneyTracker.getLanguage(),
+      "no-transactions"
+    );
+    this.historyUl.appendChild(historyLi);
+  }
+
+  renderTransactionList(): void {
+    this.moneyTracker.getHistory().forEach((li) => {
+      const historyLi = document.createElement("li") as HTMLLIElement;
+      const firstDiv = document.createElement("div") as HTMLDivElement;
+      const secondDiv = document.createElement("div") as HTMLDivElement;
+      const thirdDiv = document.createElement("div") as HTMLDivElement;
+      const dateP = document.createElement("p") as HTMLParagraphElement;
+      const timeP = document.createElement("p") as HTMLParagraphElement;
+      const categoryP = document.createElement("p") as HTMLParagraphElement;
+      const noteP = document.createElement("p") as HTMLParagraphElement;
+      const amountP = document.createElement("p") as HTMLParagraphElement;
+      const balanceEndP = document.createElement("p") as HTMLParagraphElement;
+
+      dateP.classList.add("date");
+      timeP.classList.add("time");
+      categoryP.classList.add("category");
+      noteP.classList.add("note");
+      if (li.type === "income") {
+        amountP.classList.add("amount", "income");
+      } else {
+        amountP.classList.add("amount", "expense");
+      }
+      balanceEndP.classList.add("balance-end");
+
+      const formattedDateAndTime = formatDateAndTime(
+        li.date,
+        "id-ID"
+      ) as DateAndTime;
+
+      dateP.textContent = `${formattedDateAndTime.date}`;
+      timeP.textContent = `${formattedDateAndTime.time}`;
+      categoryP.textContent = translate(
+        this.moneyTracker.getLanguage(),
+        li.category
+      );
+      if (li.note) {
+        noteP.textContent = li.note;
+      }
+      amountP.textContent = formatCurrency(li.amount, "id-ID", "IDR");
+      balanceEndP.textContent = formatCurrency(li.balanceEnd, "id-ID", "IDR");
+
+      firstDiv.append(dateP, timeP);
+      secondDiv.append(categoryP);
+      if (li.note) {
+        secondDiv.append(noteP);
+      }
+      thirdDiv.append(amountP, balanceEndP);
+      historyLi.append(firstDiv, secondDiv, thirdDiv);
+      this.historyUl.appendChild(historyLi);
+    });
+  }
+
   renderSummary(): void {
     const balance = this.moneyTracker.getBalance();
     this.balanceP.classList.add("balance");
@@ -376,65 +437,10 @@ class UserInterface {
 
   renderHistory(): void {
     this.historyUl.innerHTML = "";
-    const history = this.moneyTracker.getHistory();
-
-    if (history.length === 0) {
-      const historyLi = document.createElement("li");
-      historyLi.textContent = translate(
-        this.moneyTracker.getLanguage(),
-        "no-transactions"
-      );
-      this.historyUl.appendChild(historyLi);
+    if (this.moneyTracker.getHistory().length === 0) {
+      this.renderNoTransactionList();
     } else {
-      history.forEach((li) => {
-        const historyLi = document.createElement("li") as HTMLLIElement;
-        const firstDiv = document.createElement("div") as HTMLDivElement;
-        const secondDiv = document.createElement("div") as HTMLDivElement;
-        const thirdDiv = document.createElement("div") as HTMLDivElement;
-        const dateP = document.createElement("p") as HTMLParagraphElement;
-        const timeP = document.createElement("p") as HTMLParagraphElement;
-        const categoryP = document.createElement("p") as HTMLParagraphElement;
-        const noteP = document.createElement("p") as HTMLParagraphElement;
-        const amountP = document.createElement("p") as HTMLParagraphElement;
-        const balanceEndP = document.createElement("p") as HTMLParagraphElement;
-
-        dateP.classList.add("date");
-        timeP.classList.add("time");
-        categoryP.classList.add("category");
-        noteP.classList.add("note");
-        if (li.type === "income") {
-          amountP.classList.add("amount", "income");
-        } else {
-          amountP.classList.add("amount", "expense");
-        }
-        balanceEndP.classList.add("balance-end");
-
-        const formattedDateAndTime = formatDateAndTime(
-          li.date,
-          "id-ID"
-        ) as DateAndTime;
-
-        dateP.textContent = `${formattedDateAndTime.date}`;
-        timeP.textContent = `${formattedDateAndTime.time}`;
-        categoryP.textContent = translate(
-          this.moneyTracker.getLanguage(),
-          li.category
-        );
-        if (li.note) {
-          noteP.textContent = li.note;
-        }
-        amountP.textContent = formatCurrency(li.amount, "id-ID", "IDR");
-        balanceEndP.textContent = formatCurrency(li.balanceEnd, "id-ID", "IDR");
-
-        firstDiv.append(dateP, timeP);
-        secondDiv.append(categoryP);
-        if (li.note) {
-          secondDiv.append(noteP);
-        }
-        thirdDiv.append(amountP, balanceEndP);
-        historyLi.append(firstDiv, secondDiv, thirdDiv);
-        this.historyUl.appendChild(historyLi);
-      });
+      this.renderTransactionList();
     }
   }
 
