@@ -36,7 +36,7 @@ class MoneyTracker {
   private balance: number;
   private income: number;
   private expenses: number;
-  private history: Transaction[];
+  private transactions: Transaction[];
 
   constructor() {
     const savedData = loadFromLocalStorage("money-tracker");
@@ -45,16 +45,16 @@ class MoneyTracker {
       this.balance = 0;
       this.income = 0;
       this.expenses = 0;
-      this.history = [];
+      this.transactions = [];
     } else {
       this.language = savedData.language;
       this.balance = savedData.balance;
       this.income = savedData.income;
       this.expenses = savedData.expenses;
-      this.history = savedData.history.map((t: Transaction) => ({
-        ...t,
+      this.transactions = savedData.transactions.map((tx: Transaction) => ({
+        ...tx,
         // Convert back as a Date because JSON stringify it. Also formatDate() can properly format again.
-        date: new Date(t.date),
+        date: new Date(tx.date),
       }));
     }
   }
@@ -75,16 +75,16 @@ class MoneyTracker {
     return this.expenses;
   }
 
-  getHistory(): Transaction[] {
-    return this.history.map((t) => ({
-      id: t.id,
-      type: t.type,
-      amount: t.amount,
-      category: t.category,
-      balanceStart: t.balanceStart,
-      balanceEnd: t.balanceEnd,
-      note: t.note,
-      date: t.date,
+  getTransactions(): Transaction[] {
+    return this.transactions.map((tx) => ({
+      id: tx.id,
+      type: tx.type,
+      amount: tx.amount,
+      category: tx.category,
+      balanceStart: tx.balanceStart,
+      balanceEnd: tx.balanceEnd,
+      note: tx.note,
+      date: tx.date,
     }));
   }
 
@@ -105,7 +105,7 @@ class MoneyTracker {
     }
 
     transaction.balanceEnd = this.balance;
-    this.history.push(transaction);
+    this.transactions.push(transaction);
     this.saveState();
   }
 
@@ -115,7 +115,7 @@ class MoneyTracker {
       balance: this.balance,
       income: this.income,
       expenses: this.expenses,
-      history: this.history,
+      transactions: this.transactions,
     });
   }
 
@@ -124,7 +124,7 @@ class MoneyTracker {
     this.balance = 0;
     this.income = 0;
     this.expenses = 0;
-    this.history = [];
+    this.transactions = [];
 
     removeFromLocalStorage("money-tracker");
   }
@@ -159,87 +159,73 @@ class Transaction {
 }
 
 class UserInterface {
-  moneyTracker: MoneyTracker;
-  balanceP: HTMLParagraphElement;
-  incomeP: HTMLParagraphElement;
-  expensesP: HTMLParagraphElement;
-  incomeModal: HTMLDialogElement;
-  expenseModal: HTMLDialogElement;
-  languageForm: HTMLFormElement;
-  incomeForm: HTMLFormElement;
-  expenseForm: HTMLFormElement;
-  incomeAmountInput: HTMLInputElement;
-  expenseAmountInput: HTMLInputElement;
-  languageSelect: HTMLSelectElement;
-  incomeCategorySelect: HTMLSelectElement;
-  expenseCategorySelect: HTMLSelectElement;
-  incomeNoteInput: HTMLInputElement;
-  expenseNoteInput: HTMLInputElement;
-  resetButton: HTMLButtonElement;
-  incomeButton: HTMLButtonElement;
-  expenseButton: HTMLButtonElement;
-  incomeCancelButton: HTMLButtonElement;
-  expenseCancelButton: HTMLButtonElement;
-  historyUl: HTMLUListElement;
+  private moneyTracker: MoneyTracker;
+  private balanceP = document.getElementById("balance") as HTMLParagraphElement;
+  private incomeP = document.getElementById("income") as HTMLParagraphElement;
+  private expensesP = document.getElementById(
+    "expenses"
+  ) as HTMLParagraphElement;
+  private incomeModal = document.getElementById(
+    "income-modal"
+  ) as HTMLDialogElement;
+  private expenseModal = document.getElementById(
+    "expense-modal"
+  ) as HTMLDialogElement;
+  private languageForm = document.getElementById(
+    "language-form"
+  ) as HTMLFormElement;
+  private incomeForm = document.getElementById(
+    "income-form"
+  ) as HTMLFormElement;
+  private expenseForm = document.getElementById(
+    "expense-form"
+  ) as HTMLFormElement;
+  private incomeAmountInput = document.getElementById(
+    "income-amount"
+  ) as HTMLInputElement;
+  private expenseAmountInput = document.getElementById(
+    "expense-amount"
+  ) as HTMLInputElement;
+  private languageSelect = document.getElementById(
+    "language"
+  ) as HTMLSelectElement;
+  private incomeCategorySelect = document.getElementById(
+    "income-category"
+  ) as HTMLSelectElement;
+  private expenseCategorySelect = document.getElementById(
+    "expense-category"
+  ) as HTMLSelectElement;
+  private incomeNoteInput = document.getElementById(
+    "income-note"
+  ) as HTMLInputElement;
+  private expenseNoteInput = document.getElementById(
+    "expense-note"
+  ) as HTMLInputElement;
+  private resetButton = document.getElementById(
+    "reset-btn"
+  ) as HTMLButtonElement;
+  private incomeButton = document.getElementById(
+    "income-btn"
+  ) as HTMLButtonElement;
+  private expenseButton = document.getElementById(
+    "expense-btn"
+  ) as HTMLButtonElement;
+  private incomeCancelButton = document.getElementById(
+    "income-cancel-btn"
+  ) as HTMLButtonElement;
+  private expenseCancelButton = document.getElementById(
+    "expense-cancel-btn"
+  ) as HTMLButtonElement;
+  private transactionsUl = document.getElementById(
+    "transactions"
+  ) as HTMLUListElement;
 
   constructor(moneyTracker: MoneyTracker) {
     this.moneyTracker = moneyTracker;
-    this.balanceP = document.getElementById("balance") as HTMLParagraphElement;
-    this.incomeP = document.getElementById("income") as HTMLParagraphElement;
-    this.expensesP = document.getElementById(
-      "expenses"
-    ) as HTMLParagraphElement;
-    this.incomeModal = document.getElementById(
-      "income-modal"
-    ) as HTMLDialogElement;
-    this.expenseModal = document.getElementById(
-      "expense-modal"
-    ) as HTMLDialogElement;
-    this.languageForm = document.getElementById(
-      "language-form"
-    ) as HTMLFormElement;
-    this.incomeForm = document.getElementById("income-form") as HTMLFormElement;
-    this.expenseForm = document.getElementById(
-      "expense-form"
-    ) as HTMLFormElement;
-    this.incomeAmountInput = document.getElementById(
-      "income-amount"
-    ) as HTMLInputElement;
-    this.expenseAmountInput = document.getElementById(
-      "expense-amount"
-    ) as HTMLInputElement;
-    this.languageSelect = document.getElementById(
-      "language"
-    ) as HTMLSelectElement;
-    this.incomeCategorySelect = document.getElementById(
-      "income-category"
-    ) as HTMLSelectElement;
-    this.expenseCategorySelect = document.getElementById(
-      "expense-category"
-    ) as HTMLSelectElement;
-    this.incomeNoteInput = document.getElementById(
-      "income-note"
-    ) as HTMLInputElement;
-    this.expenseNoteInput = document.getElementById(
-      "expense-note"
-    ) as HTMLInputElement;
-    this.resetButton = document.getElementById(
-      "reset-btn"
-    ) as HTMLButtonElement;
-    this.incomeButton = document.getElementById(
-      "income-btn"
-    ) as HTMLButtonElement;
-    this.expenseButton = document.getElementById(
-      "expense-btn"
-    ) as HTMLButtonElement;
-    this.incomeCancelButton = document.getElementById(
-      "income-cancel-btn"
-    ) as HTMLButtonElement;
-    this.expenseCancelButton = document.getElementById(
-      "expense-cancel-btn"
-    ) as HTMLButtonElement;
-    this.historyUl = document.getElementById("history") as HTMLUListElement;
+    this.bindEvents();
+  }
 
+  bindEvents(): void {
     this.handleLanguageChange(this.languageSelect);
     this.handleModalOpen(this.incomeButton, this.incomeModal);
     this.handleModalOpen(this.expenseButton, this.expenseModal);
@@ -330,7 +316,7 @@ class UserInterface {
       form.reset();
       this.renderUI();
 
-      console.table(this.moneyTracker.getHistory());
+      console.table(this.moneyTracker.getTransactions());
     });
   }
 
@@ -348,17 +334,17 @@ class UserInterface {
   }
 
   renderNoTransactionList(): void {
-    const historyLi = document.createElement("li");
-    historyLi.textContent = translate(
+    const transactionLi = document.createElement("li");
+    transactionLi.textContent = translate(
       this.moneyTracker.getLanguage(),
       "no-transactions"
     );
-    this.historyUl.appendChild(historyLi);
+    this.transactionsUl.appendChild(transactionLi);
   }
 
   renderTransactionList(): void {
-    this.moneyTracker.getHistory().forEach((li) => {
-      const historyLi = document.createElement("li") as HTMLLIElement;
+    this.moneyTracker.getTransactions().forEach((tx) => {
+      const transactionLi = document.createElement("li") as HTMLLIElement;
       const firstDiv = document.createElement("div") as HTMLDivElement;
       const secondDiv = document.createElement("div") as HTMLDivElement;
       const thirdDiv = document.createElement("div") as HTMLDivElement;
@@ -373,7 +359,7 @@ class UserInterface {
       timeP.classList.add("time");
       categoryP.classList.add("category");
       noteP.classList.add("note");
-      if (li.type === "income") {
+      if (tx.type === "income") {
         amountP.classList.add("amount", "income");
       } else {
         amountP.classList.add("amount", "expense");
@@ -381,7 +367,7 @@ class UserInterface {
       balanceEndP.classList.add("balance-end");
 
       const formattedDateAndTime = formatDateAndTime(
-        li.date,
+        tx.date,
         "id-ID"
       ) as DateAndTime;
 
@@ -389,22 +375,22 @@ class UserInterface {
       timeP.textContent = `${formattedDateAndTime.time}`;
       categoryP.textContent = translate(
         this.moneyTracker.getLanguage(),
-        li.category
+        tx.category
       );
-      if (li.note) {
-        noteP.textContent = li.note;
+      if (tx.note) {
+        noteP.textContent = tx.note;
       }
-      amountP.textContent = formatCurrency(li.amount, "id-ID", "IDR");
-      balanceEndP.textContent = formatCurrency(li.balanceEnd, "id-ID", "IDR");
+      amountP.textContent = formatCurrency(tx.amount, "id-ID", "IDR");
+      balanceEndP.textContent = formatCurrency(tx.balanceEnd, "id-ID", "IDR");
 
       firstDiv.append(dateP, timeP);
       secondDiv.append(categoryP);
-      if (li.note) {
+      if (tx.note) {
         secondDiv.append(noteP);
       }
       thirdDiv.append(amountP, balanceEndP);
-      historyLi.append(firstDiv, secondDiv, thirdDiv);
-      this.historyUl.appendChild(historyLi);
+      transactionLi.append(firstDiv, secondDiv, thirdDiv);
+      this.transactionsUl.appendChild(transactionLi);
     });
   }
 
@@ -435,9 +421,9 @@ class UserInterface {
     );
   }
 
-  renderHistory(): void {
-    this.historyUl.innerHTML = "";
-    if (this.moneyTracker.getHistory().length === 0) {
+  renderTransactions(): void {
+    this.transactionsUl.innerHTML = "";
+    if (this.moneyTracker.getTransactions().length === 0) {
       this.renderNoTransactionList();
     } else {
       this.renderTransactionList();
@@ -467,7 +453,7 @@ class UserInterface {
 
   renderUI(): void {
     this.renderSummary();
-    this.renderHistory();
+    this.renderTransactions();
     this.renderTranslations();
   }
 }
