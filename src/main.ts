@@ -5,31 +5,9 @@ import {
   removeFromLocalStorage,
   saveToLocalStorage,
   translate,
-  type DateAndTime,
 } from "./modules/helpers";
 import type { translations } from "./modules/translations";
-
-type ExpenseCategory =
-  | "bills"
-  | "charity"
-  | "debt"
-  | "entertainment"
-  | "food"
-  | "health"
-  | "shopping"
-  | "transport"
-  | "other";
-
-type IncomeCategory =
-  | "allowance"
-  | "business"
-  | "freelance"
-  | "gift"
-  | "investment"
-  | "pension"
-  | "royalty"
-  | "salary"
-  | "other";
+import type { DateAndTime, ExpenseCategory, IncomeCategory } from "./types";
 
 class MoneyTracker {
   private language: "en" | "id";
@@ -53,7 +31,7 @@ class MoneyTracker {
       this.expenses = savedData.expenses;
       this.transactions = savedData.transactions.map((tx: Transaction) => ({
         ...tx,
-        // Convert back as a Date because JSON stringify it. Also formatDate() can properly format again.
+        // Convert back as a Date because JSON stringify it. Also formatDateAndTime() can properly format again.
         date: new Date(tx.date),
       }));
     }

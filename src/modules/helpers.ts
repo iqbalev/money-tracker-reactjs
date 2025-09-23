@@ -1,9 +1,5 @@
 import { translations } from "./translations";
-
-export type DateAndTime = {
-  date: string;
-  time: string;
-};
+import type { DateAndTime } from "../types";
 
 export function translate(
   locale: "en" | "id",
