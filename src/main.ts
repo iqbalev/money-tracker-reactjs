@@ -1,13 +1,115 @@
 import {
   formatCurrency,
   formatDateAndTime,
-  loadFromLocalStorage,
-  removeFromLocalStorage,
-  saveToLocalStorage,
   translate,
 } from "./modules/helpers";
 import type { translations } from "./modules/translations";
-import type { DateAndTime, ExpenseCategory, IncomeCategory } from "./types";
+import type {
+  DateAndTime,
+  ExpenseCategory,
+  IncomeCategory,
+  Settings,
+  Summary,
+} from "./types";
+
+class IndexedDbService {
+  DB_NAME = "money-tracker" as const;
+  DB_VERSION = 1 as const;
+  STORE_NAMES = {
+    summary: "summary",
+    transactions: "transactions",
+    settings: "settings",
+  } as const;
+
+  async open(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = window.indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+      request.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        db.createObjectStore(this.STORE_NAMES.summary);
+        db.createObjectStore(this.STORE_NAMES.transactions, {
+          keyPath: "id",
+          autoIncrement: true,
+        });
+        db.createObjectStore(this.STORE_NAMES.settings);
+      };
+
+      request.onsuccess = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        resolve(db);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  }
+
+  async add<T>(
+    storeName: keyof typeof this.STORE_NAMES,
+    value: T,
+    key?: string
+  ): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.STORE_NAMES[storeName], "readwrite");
+      const store = tx.objectStore(this.STORE_NAMES[storeName]);
+
+      if (storeName === "transactions") {
+        store.add(value);
+      } else {
+        store.put(value, key || this.STORE_NAMES[storeName]);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async get<T>(
+    storeName: keyof typeof this.STORE_NAMES,
+    key?: string
+  ): Promise<T> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readonly");
+      const store = tx.objectStore(storeName);
+      const request = store.get(key || this.STORE_NAMES[storeName]);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAll<T>(storeName: keyof typeof this.STORE_NAMES): Promise<T[]> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, "readonly");
+      const store = tx.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async clear(storeNames: (keyof typeof this.STORE_NAMES)[]): Promise<void> {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeNames, "readwrite");
+
+      for (const name of storeNames) {
+        tx.objectStore(name).clear();
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+}
+
+const db = new IndexedDbService();
 
 class MoneyTracker {
   private language: "en" | "id";
@@ -17,24 +119,51 @@ class MoneyTracker {
   private transactions: Transaction[];
 
   constructor() {
-    const savedData = loadFromLocalStorage("money-tracker");
-    if (!savedData) {
-      this.language = "id";
-      this.balance = 0;
-      this.income = 0;
-      this.expenses = 0;
-      this.transactions = [];
-    } else {
-      this.language = savedData.language;
-      this.balance = savedData.balance;
-      this.income = savedData.income;
-      this.expenses = savedData.expenses;
-      this.transactions = savedData.transactions.map((tx: Transaction) => ({
-        ...tx,
-        // Convert back as a Date because JSON stringify it. Also formatDateAndTime() can properly format again.
-        date: new Date(tx.date),
-      }));
+    this.language = "id";
+    this.balance = 0;
+    this.income = 0;
+    this.expenses = 0;
+    this.transactions = [];
+  }
+
+  async loadState(): Promise<void> {
+    const savedData = {
+      summary: await db.get<Summary>("summary"),
+      transactions: await db.getAll<Transaction>("transactions"),
+      settings: await db.get<Settings>("settings"),
+    };
+
+    if (savedData.summary) {
+      this.balance = savedData.summary.balance;
+      this.income = savedData.summary.income;
+      this.expenses = savedData.summary.expenses;
     }
+
+    if (savedData.transactions.length) {
+      this.transactions = savedData.transactions;
+    }
+
+    if (savedData.settings) {
+      this.language = savedData.settings.language;
+    }
+  }
+
+  async saveState<T>(
+    storeName: keyof typeof db.STORE_NAMES,
+    value: T,
+    key?: string
+  ) {
+    await db.add(storeName, value, key);
+  }
+
+  async resetState(): Promise<void> {
+    this.language = "id";
+    this.balance = 0;
+    this.income = 0;
+    this.expenses = 0;
+    this.transactions = [];
+
+    await db.clear(["summary", "transactions", "settings"]);
   }
 
   getLanguage(): "en" | "id" {
@@ -54,24 +183,15 @@ class MoneyTracker {
   }
 
   getTransactions(): Transaction[] {
-    return this.transactions.map((tx) => ({
-      id: tx.id,
-      type: tx.type,
-      amount: tx.amount,
-      category: tx.category,
-      balanceStart: tx.balanceStart,
-      balanceEnd: tx.balanceEnd,
-      note: tx.note,
-      date: tx.date,
-    }));
+    return this.transactions;
   }
 
-  setLanguage(locale: "en" | "id") {
+  async setLanguage(locale: "en" | "id") {
     this.language = locale;
-    this.saveState();
+    await this.saveState<Settings>("settings", { language: this.language });
   }
 
-  createTransaction(transaction: Transaction): void {
+  async createTransaction(transaction: Transaction): Promise<void> {
     transaction.balanceStart = this.balance;
 
     if (transaction.type === "income") {
@@ -84,32 +204,17 @@ class MoneyTracker {
 
     transaction.balanceEnd = this.balance;
     this.transactions.push(transaction);
-    this.saveState();
-  }
 
-  saveState(): void {
-    saveToLocalStorage("money-tracker", {
-      language: this.language,
+    await this.saveState<Summary>("summary", {
       balance: this.balance,
       income: this.income,
       expenses: this.expenses,
-      transactions: this.transactions,
     });
-  }
-
-  resetState(): void {
-    this.language = "en";
-    this.balance = 0;
-    this.income = 0;
-    this.expenses = 0;
-    this.transactions = [];
-
-    removeFromLocalStorage("money-tracker");
+    await this.saveState<Transaction>("transactions", transaction);
   }
 }
 
 class Transaction {
-  readonly id: string;
   type: "income" | "expense";
   amount: number;
   category: IncomeCategory | ExpenseCategory;
@@ -124,8 +229,6 @@ class Transaction {
     category: IncomeCategory | ExpenseCategory,
     note?: string
   ) {
-    this.id =
-      Date.now().toString() + Math.floor(Math.random() * 1000).toString();
     this.type = type;
     this.amount = amount;
     this.category = category;
@@ -149,9 +252,6 @@ class UserInterface {
   private expenseModal = document.getElementById(
     "expense-modal"
   ) as HTMLDialogElement;
-  private languageForm = document.getElementById(
-    "language-form"
-  ) as HTMLFormElement;
   private incomeForm = document.getElementById(
     "income-form"
   ) as HTMLFormElement;
@@ -227,7 +327,6 @@ class UserInterface {
       const language = this.languageSelect.value as "en" | "id";
       this.moneyTracker.setLanguage(language);
       this.renderUI();
-      // TODO: Add form submit when backend added.
     });
   }
 
@@ -293,8 +392,6 @@ class UserInterface {
       modal.close();
       form.reset();
       this.renderUI();
-
-      console.table(this.moneyTracker.getTransactions());
     });
   }
 
@@ -305,7 +402,6 @@ class UserInterface {
       );
       if (!confirmation) return;
 
-      removeFromLocalStorage("money-tracker");
       this.moneyTracker.resetState();
       this.renderUI();
     });
@@ -437,5 +533,10 @@ class UserInterface {
 }
 
 const moneyTracker: MoneyTracker = new MoneyTracker();
-const userInterface: UserInterface = new UserInterface(moneyTracker);
-userInterface.renderUI();
+moneyTracker
+  .loadState()
+  .then(() => {
+    const userInterface: UserInterface = new UserInterface(moneyTracker);
+    userInterface.renderUI();
+  })
+  .catch((e) => console.error("Failed to load data:", e));
