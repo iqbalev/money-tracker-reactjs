@@ -1,4 +1,4 @@
-import { translations } from "./translations";
+import { translations } from "../locales";
 import type { DateAndTime } from "../types";
 
 export function translate(
