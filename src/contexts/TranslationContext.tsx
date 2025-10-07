@@ -10,7 +10,7 @@ import { useMoneyTracker } from "./MoneyTrackerContext";
 
 const TranslationContext = createContext<TranslationContext | null>(null);
 
-export function TranslationContextProvider({
+export function TranslationProvider({
   children,
 }: ContextProviderProps<React.ReactNode>) {
   const { moneyTracker, changeLanguage } = useMoneyTracker();

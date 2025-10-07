@@ -14,7 +14,7 @@ import DashboardPage from "./pages/DashboardPage.tsx";
 import TransactionsPage from "./pages/TransactionsPage.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import { MoneyTrackerProvider } from "./contexts/MoneyTrackerContext.tsx";
-import { TranslationContextProvider } from "./contexts/TranslationContext.tsx";
+import { TranslationProvider } from "./contexts/TranslationContext.tsx";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -73,9 +73,9 @@ if (rootElement && !rootElement.innerHTML) {
   root.render(
     <StrictMode>
       <MoneyTrackerProvider>
-        <TranslationContextProvider>
+        <TranslationProvider>
           <RouterProvider router={router} />
-        </TranslationContextProvider>
+        </TranslationProvider>
       </MoneyTrackerProvider>
     </StrictMode>
   );
