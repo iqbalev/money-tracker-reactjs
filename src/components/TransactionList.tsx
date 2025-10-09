@@ -24,7 +24,7 @@ function TransactionList() {
             </div>
 
             <div className="transaction right">
-              <p className="category">{tx.category}</p>
+            <p className="category">{translate(tx.category)}</p>
               <p
                 className={`amount ${
                   tx.type === "income" ? "income" : "expense"
