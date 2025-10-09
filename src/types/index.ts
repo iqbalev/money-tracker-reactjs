@@ -1,4 +1,5 @@
 import type { translations } from "@/locales";
+import type { ReactNode } from "react";
 
 export type TransactionType = "income" | "expense";
 
@@ -102,4 +103,11 @@ export type ExpenseFormData = {
   amount: string;
   category: "" | ExpenseCategory;
   note: string;
+};
+
+export type ButtonProps = {
+  className?: string;
+  label: string | ReactNode;
+  onClick?: () => void;
+  type?: "button" | "reset" | "submit";
 };

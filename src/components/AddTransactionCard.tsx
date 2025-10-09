@@ -2,10 +2,12 @@ import { useMoneyTracker } from "@/contexts/MoneyTrackerContext";
 import { useTranslation } from "@/contexts/TranslationContext";
 import type { ExpenseFormData, IncomeFormData } from "@/types";
 import { useState } from "react";
+import Button from "./Button";
+import { AddIcon } from "./Icons";
 import IncomeCategoryOptions from "./IncomeCategoryOptions";
 import ExpenseCategoryOptions from "./ExpenseCategoryOptions";
 
-function Actions() {
+function AddTransactionCard() {
   const { moneyTracker, addTransaction } = useMoneyTracker();
   const { translate } = useTranslation();
   const [modal, setModal] = useState(false);
@@ -30,17 +32,13 @@ function Actions() {
     setTab("income");
   }
 
-  function openModal() {
-    setModal(true);
-  }
-
   function closeModal() {
     setModal(false);
     resetForms();
     resetTab();
   }
 
-  function cancel() {
+  function handleCancel() {
     closeModal();
   }
 
@@ -71,20 +69,25 @@ function Actions() {
 
   return (
     <>
-      <button type="button" onClick={openModal} className="btn plus">
-        &#43;
-      </button>
-
+      <Button
+        className="add"
+        label={<AddIcon />}
+        onClick={() => setModal(true)}
+      />
       {modal && (
         <div className="modal">
           <div className="tabs">
-            <button type="button" onClick={() => setTab("income")}>
-              {translate("income")}
-            </button>
+            <Button
+              className="tab"
+              label={translate("income")}
+              onClick={() => setTab("income")}
+            />
 
-            <button type="button" onClick={() => setTab("expense")}>
-              {translate("expenses")}
-            </button>
+            <Button
+              className="tab"
+              label={translate("expenses")}
+              onClick={() => setTab("expense")}
+            />
           </div>
 
           {tab === "income" && (
@@ -144,10 +147,17 @@ function Actions() {
               </div>
 
               <div className="input-buttons">
-                <button type="submit">{translate("save")}</button>
-                <button type="button" onClick={cancel}>
-                  {translate("cancel")}
-                </button>
+                <Button
+                  className="save"
+                  label={translate("save")}
+                  type="submit"
+                />
+
+                <Button
+                  className="cancel"
+                  label={translate("cancel")}
+                  onClick={handleCancel}
+                />
               </div>
             </form>
           )}
@@ -212,10 +222,17 @@ function Actions() {
               </div>
 
               <div className="input-buttons">
-                <button type="submit">{translate("save")}</button>
-                <button type="button" onClick={cancel}>
-                  {translate("cancel")}
-                </button>
+                <Button
+                  className="save"
+                  label={translate("save")}
+                  type="submit"
+                />
+
+                <Button
+                  className="cancel"
+                  label={translate("cancel")}
+                  onClick={handleCancel}
+                />
               </div>
             </form>
           )}
@@ -225,4 +242,4 @@ function Actions() {
   );
 }
 
-export default Actions;
+export default AddTransactionCard;
