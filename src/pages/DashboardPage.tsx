@@ -1,4 +1,5 @@
-import Actions from "@/components/Actions";
+import AddTransactionCard from "@/components/AddTransactionCard";
+import RecentCard from "@/components/RecentCard";
 import SummaryCard from "@/components/SummaryCard";
 
 function DashboardPage() {
@@ -8,8 +9,12 @@ function DashboardPage() {
         <SummaryCard />
       </section>
 
+      <section className="section recent">
+        <RecentCard />
+      </section>
+
       <section className="section actions">
-        <Actions />
+        <AddTransactionCard />
       </section>
     </>
   );

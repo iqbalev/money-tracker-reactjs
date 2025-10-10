@@ -111,3 +111,7 @@ export type ButtonProps = {
   onClick?: () => void;
   type?: "button" | "reset" | "submit";
 };
+
+export type TransactionListProps = {
+  display: "all" | "recent";
+};
